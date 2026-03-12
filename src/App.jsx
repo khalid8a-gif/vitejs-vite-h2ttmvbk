@@ -65,8 +65,8 @@ const CSS = `
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
   --sg:#00ff88;
 }
-body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.5}
-.app{display:flex;min-height:100vh}
+html,body,#root{margin:0;padding:0;width:100%;min-height:100vh}body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.5}
+.app{display:flex;width:100%;min-height:100vh;box-sizing:border-box}
 .sidebar{width:228px;min-height:100vh;background:#110505;border-right:1px solid #3a1010;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
 .logo{padding:18px 16px 14px;border-bottom:1px solid var(--b1)}
 .logo-inner{display:flex;align-items:center;gap:10px}
@@ -82,11 +82,11 @@ body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.
 .nbadge.red{background:var(--red);color:#fff}
 .nbadge.amber{background:var(--amber);color:#0a0c12}
 .nbadge.blue{background:var(--blue);color:#fff}
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;width:0;overflow-x:hidden}
 .topbar{padding:13px 24px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--s1);position:sticky;top:0;z-index:20}
 .pt{font-size:16px;font-weight:700;letter-spacing:-.01em}
 .ps{font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:2px}
-.content{padding:22px;flex:1}
+.content{padding:22px;flex:1;box-sizing:border-box;width:100%}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:var(--sans)}
 .btn-p{background:var(--amber);color:#0a0c12;border-color:var(--amber)}.btn-p:hover{background:var(--amber2)}
 .btn-g{background:transparent;color:var(--t2);border-color:var(--b2)}.btn-g:hover{background:var(--s2);color:var(--t1)}
@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.
 .sl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:7px}
 .sv{font-size:23px;font-weight:700;font-family:var(--mono);color:var(--t1)}
 .ss{font-size:11px;color:var(--t3);margin-top:4px;font-family:var(--mono)}
-.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--b1)}
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--b1);width:100%}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{padding:8px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);background:var(--s2);border-bottom:1px solid var(--b1);white-space:nowrap}
 tbody tr{border-bottom:1px solid var(--b1);transition:background .1s}
@@ -507,7 +507,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
       createdAt:today(), notes:order.notes,
       pickedSkus:[], packedSkus:[], packaging:null, packagingName:"",
       packageWeight:0, packageL:0, packageW:0, packageH:0,
-      labelTrackingNumber:"", labelScanned:false,
+      labelTrackingNumber:order.trackingNumber||"", labelScanned:false,
       shippingAddress:order.shippingAddress,
     }]);
     setOrders(p=>p.map(o=>o.id===order.id?{...o,status:"Processing",fulfillmentId:fId}:o));
@@ -572,7 +572,15 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
             <div className="fg"><label className="fl">Date</label><input className="inp" type="date" value={form.date} onChange={(e)=>setForm(p=>({...p,date:e.target.value}))} /></div>
             <div className="fg"><label className="fl">Status</label><select className="sel" value={form.status} onChange={(e)=>setForm(p=>({...p,status:e.target.value}))}>{ORDER_STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
           </div>
-          <div className="fg"><label className="fl">Shipping Address</label><input className="inp" value={form.shippingAddress} onChange={(e)=>setForm(p=>({...p,shippingAddress:e.target.value}))} /></div>
+          <div className="r2">
+            <div className="fg"><label className="fl">Shipping Address</label><input className="inp" value={form.shippingAddress} onChange={(e)=>setForm(p=>({...p,shippingAddress:e.target.value}))} /></div>
+            <div className="fg">
+              <label className="fl">Tracking / Label Number</label>
+              <input className="inp" value={form.trackingNumber||""} onChange={(e)=>setForm(p=>({...p,trackingNumber:e.target.value}))}
+                placeholder="Pre-assign label before fulfilment" style={{fontFamily:"var(--mono)"}} />
+              {form.trackingNumber&&<div style={{fontSize:10,color:"var(--t3)",marginTop:4,fontFamily:"var(--mono)"}}>⚡ Will be verified at fulfilment scan step</div>}
+            </div>
+          </div>
           <div className="div" />
           <div className="fl" style={{marginBottom:9}}>Line Items</div>
           <div style={{display:"flex",gap:8,marginBottom:11}}>
@@ -947,11 +955,19 @@ const FCard = ({f,inventory,setFulfillments,setOrders,supplies,setSupplies}) => 
 
               {s==="Ready to Ship" && (
                 <div>
-                  <div style={{background:"rgba(59,130,246,.07)",border:"1px solid rgba(59,130,246,.18)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                    <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:3}}>📋 NEXT STEP</div>
-                    <div style={{fontSize:12,color:"var(--t2)"}}>Generate your shipping label in your external carrier system, then scan or type the tracking number below to assign it.</div>
-                  </div>
-                  <ScanIn label="Scan or enter tracking number to assign label" placeholder="Scan tracking barcode → Enter" onScan={onLabelScan} />
+                  {f.labelTrackingNumber ? (
+                    <div style={{background:"rgba(16,185,129,.07)",border:"1px solid rgba(16,185,129,.22)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
+                      <div style={{fontSize:11,color:"var(--green)",fontWeight:700,marginBottom:3}}>🏷 LABEL PRE-ASSIGNED</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:13,marginBottom:4}}>{f.labelTrackingNumber}</div>
+                      <div style={{fontSize:11,color:"var(--t3)"}}>Label was set on the order. Scan below to verify and mark as shipped.</div>
+                    </div>
+                  ) : (
+                    <div style={{background:"rgba(59,130,246,.07)",border:"1px solid rgba(59,130,246,.18)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
+                      <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:3}}>📋 NEXT STEP</div>
+                      <div style={{fontSize:12,color:"var(--t2)"}}>Generate your shipping label in your external carrier system, then scan or type the tracking number below to assign it.</div>
+                    </div>
+                  )}
+                  <ScanIn label="Scan tracking number to confirm label" placeholder="Scan tracking barcode → Enter" onScan={onLabelScan} />
                 </div>
               )}
 
@@ -1668,11 +1684,8 @@ export default function App() {
               <div key={n.id} className={`ni ${page===n.id?"on":""}`} onClick={() => setPage(n.id)}>
                 <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
                 <span>{n.label}</span>
-                {n.id==="inventory"    && lowCount>0      && <span className="nbadge red">{lowCount}</span>}
-                {n.id==="supplies"     && lowSupplyCount>0 && <span className="nbadge red">{lowSupplyCount}</span>}
                 {n.id==="fulfillment"  && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
                 {n.id==="fulfillment"  && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
-                {n.id==="reports"      && lowCount>0   && <span className="nbadge red">{lowCount}</span>}
               </div>
             ))}
           </div>
