@@ -25,19 +25,19 @@ const CONDITIONS = ["New","Used - Like New","Used - Good","Used - Fair","Refurbi
 const ORDER_STATUSES = ["Pending","Processing","Packed","Shipped","Delivered","Cancelled"];
 const SUPPLIER_STATUSES = ["Draft","Sent","Confirmed","Partial","Received","Cancelled"];
 const FULFILLMENT_STEPS = ["Awaiting Picking","Picking","Packing","Ready to Ship","Label Assigned","Fulfilled"];
-const PKG_TYPES = [{type:"Box",icon:"\uD83D\uDCE6"},{type:"Bubble Mailer",icon:"\u2709\uFE0F"},{type:"Poly Mailer",icon:"\uD83D\uDDC2\uFE0F"},{type:"Padded Envelope",icon:"\uD83D\uDCE9"},{type:"Tube",icon:"\uD83E\uDDFB"},{type:"Custom Crate",icon:"\uD83E\uDEB5"}];
+const PKG_TYPES = [{type:"Box",icon:"📦"},{type:"Bubble Mailer",icon:"✉️"},{type:"Poly Mailer",icon:"🗂️"},{type:"Padded Envelope",icon:"📩"},{type:"Tube",icon:"🧻"},{type:"Custom Crate",icon:"🪵"}];
 const LOW_STOCK = 10;
 const SUPPLY_LOW_STOCK = 20;
 const SUPPLY_TYPES = [
-  {type:"Poly Mailer",icon:"\uD83D\uDDC2\uFE0F",unit:"each"},
-  {type:"Bubble Mailer",icon:"\u2709\uFE0F",unit:"each"},
-  {type:"Box",icon:"\uD83D\uDCE6",unit:"each"},
-  {type:"Padded Envelope",icon:"\uD83D\uDCE9",unit:"each"},
-  {type:"Tube",icon:"\uD83E\uDDFB",unit:"each"},
-  {type:"Tape Roll",icon:"\uD83D\uDD01",unit:"roll"},
-  {type:"Void Fill",icon:"\uD83C\uDF00",unit:"bag"},
-  {type:"Label Sheet",icon:"\uD83C\uDFF7\uFE0F",unit:"sheet"},
-  {type:"Other",icon:"\uD83D\uDCCB",unit:"each"},
+  {type:"Poly Mailer",icon:"🗂️",unit:"each"},
+  {type:"Bubble Mailer",icon:"✉️",unit:"each"},
+  {type:"Box",icon:"📦",unit:"each"},
+  {type:"Padded Envelope",icon:"📩",unit:"each"},
+  {type:"Tube",icon:"🧻",unit:"each"},
+  {type:"Tape Roll",icon:"🔁",unit:"roll"},
+  {type:"Void Fill",icon:"🌀",unit:"bag"},
+  {type:"Label Sheet",icon:"🏷️",unit:"sheet"},
+  {type:"Other",icon:"📋",unit:"each"},
 ];
 
 const genId = () => Math.random().toString(36).substr(2,9).toUpperCase();
@@ -144,7 +144,7 @@ td{padding:8px 13px;color:var(--t2);vertical-align:middle}
 .scan-ok{color:var(--sg);font-size:11px;font-weight:600;font-family:var(--mono);display:flex;align-items:center;gap:5px}
 .pipe{display:flex;align-items:flex-start;gap:0;margin-bottom:20px;overflow-x:auto;padding-bottom:2px}
 .pstep{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:96px;position:relative}
-.pstep::after{content:'\u203A';position:absolute;right:-8px;top:14px;color:var(--t3);font-size:16px}
+.pstep::after{content:'›';position:absolute;right:-8px;top:14px;color:var(--t3);font-size:16px}
 .pstep:last-child::after{display:none}
 .pdot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--b2);background:var(--s2);transition:all .2s}
 .pdot.done{background:rgba(16,185,129,.14);border-color:var(--green)}
@@ -209,7 +209,7 @@ const injectCSS = () => {
   }
 };
 
-// \u2500\u2500 Barcode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Barcode ──────────────────────────────────────────────────────────────────
 const BC = ({ value, h = 48, small = false }) => {
   const ref = useRef(null);
   useEffect(() => {
@@ -227,7 +227,7 @@ const BC = ({ value, h = 48, small = false }) => {
   );
 };
 
-// \u2500\u2500 Scan Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Scan Input ───────────────────────────────────────────────────────────────
 const ScanIn = ({ label, placeholder, onScan, confirmed, okText }) => {
   const [v, setV] = useState("");
   const ref = useRef(null);
@@ -242,20 +242,20 @@ const ScanIn = ({ label, placeholder, onScan, confirmed, okText }) => {
     <div>
       {label && <div className="scan-lbl" style={{marginBottom:6}}>{label}</div>}
       <div className="scan-zone" ref={zone} onClick={function(){ if(ref.current) ref.current.focus(); }}>
-        <span style={{fontSize:22}}>\u2B21</span>
+        <span style={{fontSize:22}}>⬡</span>
         <input ref={ref} className="scan-inp" value={v} onChange={(e)=>setV(e.target.value)}
-          onKeyDown={(e)=>e.key==="Enter"&&go()} placeholder={placeholder||"Scan barcode \u2192 Enter"} />
-        {confirmed && <div className="scan-ok"><span>\u2713</span><span>{okText||"Confirmed"}</span></div>}
+          onKeyDown={(e)=>e.key==="Enter"&&go()} placeholder={placeholder||"Scan barcode → Enter"} />
+        {confirmed && <div className="scan-ok"><span>✓</span><span>{okText||"Confirmed"}</span></div>}
       </div>
     </div>
   );
 };
 
-// \u2500\u2500 Modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Modal ────────────────────────────────────────────────────────────────────
 const Modal = ({ title, onClose, children, footer, size="" }) => (
   <div className="ov" onClick={(e)=>e.target===e.currentTarget&&onClose()}>
     <div className={`modal ${size}`}>
-      <div className="mh"><div className="mt2">{title}</div><button className="mc" onClick={onClose}>\u00D7</button></div>
+      <div className="mh"><div className="mt2">{title}</div><button className="mc" onClick={onClose}>×</button></div>
       <div className="mb2">{children}</div>
       {footer && <div className="mf">{footer}</div>}
     </div>
@@ -267,9 +267,9 @@ const Empty = ({icon,title,sub,action}) => (
   <div className="empty"><div className="ei">{icon}</div><div className="et">{title}</div><div className="es">{sub}</div>{action&&<div className="mt16">{action}</div>}</div>
 );
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // INVENTORY
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const defItem = () => ({
   id:genId(), sku:genSku(), name:"", description:"", condition:"New",
   quantity:0, reorderPoint:5, costPrice:0, sellPrice:0,
@@ -308,11 +308,11 @@ const ItemForm = ({item,locations,onChange}) => {
         {item.image ? (
           <div style={{position:"relative",display:"inline-block"}}>
             <img src={item.image} className="ipr" style={{maxWidth:200}} alt="product" />
-            <button className="btn btn-d btn-xs" style={{position:"absolute",top:6,right:6}} onClick={()=>onChange("image",null)}>\u2715</button>
+            <button className="btn btn-d btn-xs" style={{position:"absolute",top:6,right:6}} onClick={()=>onChange("image",null)}>✕</button>
           </div>
         ) : (
           <div className="uzone" onClick={()=>imgRef.current.click()}>
-            <span style={{fontSize:26}}>\uD83D\uDCF7</span><span>Click to upload image</span>
+            <span style={{fontSize:26}}>📷</span><span>Click to upload image</span>
           </div>
         )}
         <input ref={imgRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImg} />
@@ -329,7 +329,7 @@ const ItemForm = ({item,locations,onChange}) => {
         <div className="fg"><label className="fl">Category</label><input className="inp" value={item.category} onChange={(e)=>onChange("category",e.target.value)} /></div>
         <div className="fg"><label className="fl">Location</label>
           <select className="sel" value={item.location} onChange={(e)=>onChange("location",e.target.value)}>
-            <option value="">\u2014 None \u2014</option>
+            <option value="">— None —</option>
             {locations.map(l=><option key={l.id} value={l.name}>{l.name}</option>)}
           </select></div>
       </div>
@@ -356,7 +356,7 @@ const ItemForm = ({item,locations,onChange}) => {
         </label>
         {item.isPackaging && (
           <select className="sel" style={{marginTop:9}} value={item.pkgType} onChange={(e)=>onChange("pkgType",e.target.value)}>
-            <option value="">\u2014 Packaging type \u2014</option>
+            <option value="">— Packaging type —</option>
             {PKG_TYPES.map(p=><option key={p.type} value={p.type}>{p.icon} {p.type}</option>)}
           </select>
         )}
@@ -392,7 +392,7 @@ const Inventory = ({inventory,setInventory,locations}) => {
   return (
     <div>
       <div className="fb">
-        <div className="sw"><span className="si">\u2B21</span><input className="inp" placeholder="Search name or SKU..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
+        <div className="sw"><span className="si">⬡</span><input className="inp" placeholder="Search name or SKU..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
         <select className="sel" style={{width:"auto"}} value={fC} onChange={(e)=>setFC(e.target.value)}>
           <option value="All">All Conditions</option>{CONDITIONS.map(c=><option key={c}>{c}</option>)}
         </select>
@@ -405,7 +405,7 @@ const Inventory = ({inventory,setInventory,locations}) => {
         <button className="btn btn-p" onClick={()=>{setForm(defItem());setModal({mode:"add"})}}>+ Add Item</button>
       </div>
 
-      {filtered.length===0 ? <Empty icon="\uD83D\uDCE6" title="No items" sub="Add your first inventory item" action={<button className="btn btn-p" onClick={()=>{setForm(defItem());setModal({mode:"add"})}}>+ Add Item</button>} /> : (
+      {filtered.length===0 ? <Empty icon="📦" title="No items" sub="Add your first inventory item" action={<button className="btn btn-p" onClick={()=>{setForm(defItem());setModal({mode:"add"})}}>+ Add Item</button>} /> : (
         <div className="tw"><table>
           <thead><tr><th></th><th>SKU / Barcode</th><th>Product</th><th>Cond.</th><th>Platforms</th><th>Stock</th><th>Cost</th><th>Sell</th><th>Type</th><th>Actions</th></tr></thead>
           <tbody>
@@ -414,7 +414,7 @@ const Inventory = ({inventory,setInventory,locations}) => {
               return (
                 <tr key={item.id}>
                   <td style={{width:52,padding:"5px 8px"}}>
-                    <div className="pimg">{item.image?<img src={item.image} alt={item.name} />:<span>{item.isPackaging?"\uD83D\uDCE6":"\uD83C\uDFF7"}</span>}</div>
+                    <div className="pimg">{item.image?<img src={item.image} alt={item.name} />:<span>{item.isPackaging?"📦":"🏷"}</span>}</div>
                   </td>
                   <td>
                     <button className="btn btn-g btn-xs" style={{fontFamily:"var(--mono)",color:"var(--amber)",marginBottom:4}} onClick={()=>setBcModal(item)}>{item.sku}</button>
@@ -422,12 +422,12 @@ const Inventory = ({inventory,setInventory,locations}) => {
                   </td>
                   <td><div className="fw6" style={{fontSize:13}}>{item.name}</div>{item.category&&<div className="sm muted">{item.category}</div>}</td>
                   <td><Badge label={item.condition} color={SC[item.condition]||"#6b7280"} /></td>
-                  <td><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{item.platforms.length===0?<span className="muted sm">\u2014</span>:item.platforms.map(p=><span key={p} className="chip">{p}</span>)}</div></td>
+                  <td><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{item.platforms.length===0?<span className="muted sm">—</span>:item.platforms.map(p=><span key={p} className="chip">{p}</span>)}</div></td>
                   <td>
                     <span className="mono fw6" style={{color:stc}}>{totalQty(item)}</span>
                     {item.locationQty&&item.locationQty.length>0&&(
                       <div className="sm muted" style={{marginTop:2,fontFamily:"var(--mono)"}}>
-                        {item.locationQty.map(function(lq){ return "\uD83D\uDCCD"+lq.location+"\u00B7"+lq.qty; }).join("  ")}
+                        {item.locationQty.map(function(lq){ return "📍"+lq.location+"·"+lq.qty; }).join("  ")}
                       </div>
                     )}
                     <div className="sbar"><div className="sfill" style={{background:stc,width:`${Math.min((totalQty(item)/Math.max(item.reorderPoint*3,1))*100,100)}%`}} /></div>
@@ -447,13 +447,13 @@ const Inventory = ({inventory,setInventory,locations}) => {
       )}
 
       {bcModal && (
-        <Modal title={`Barcode \u2014 ${bcModal.sku}`} onClose={()=>setBcModal(null)} footer={<button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>}>
+        <Modal title={`Barcode — ${bcModal.sku}`} onClose={()=>setBcModal(null)} footer={<button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:15,padding:"8px 0"}}>
             {bcModal.image && <img src={bcModal.image} style={{width:80,height:80,objectFit:"cover",borderRadius:8,border:"1px solid var(--b1)"}} />}
             <div style={{fontSize:15,fontWeight:700}}>{bcModal.name}</div>
             <BC value={bcModal.sku} h={70} />
             <div style={{display:"flex",gap:18}}>
-              {[["Condition",bcModal.condition],["Qty",bcModal.quantity],["Location",bcModal.location||"\u2014"]].map(([k,v])=>(
+              {[["Condition",bcModal.condition],["Qty",bcModal.quantity],["Location",bcModal.location||"—"]].map(([k,v])=>(
                 <div key={k} className="sm muted">{k}: <span className="amber">{v}</span></div>
               ))}
             </div>
@@ -477,9 +477,9 @@ const Inventory = ({inventory,setInventory,locations}) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // ORDERS
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const defOrder = () => ({
   id:genId(), orderId:`ORD-${Date.now().toString().slice(-6)}`,
   platform:"Manual", customerName:"", customerEmail:"",
@@ -534,7 +534,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
   return (
     <div>
       <div className="fb">
-        <div className="sw"><span className="si">\u2B21</span><input className="inp" placeholder="Search orders..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
+        <div className="sw"><span className="si">⬡</span><input className="inp" placeholder="Search orders..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
         <select className="sel" style={{width:"auto"}} value={fS} onChange={(e)=>setFS(e.target.value)}>
           <option value="All">All Statuses</option>{ORDER_STATUSES.map(s=><option key={s}>{s}</option>)}
         </select>
@@ -544,7 +544,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
         <button className="btn btn-p" onClick={()=>{setForm(defOrder());setOItems([]);setModal({mode:"add"})}}>+ New Order</button>
       </div>
 
-      {filtered.length===0 ? <Empty icon="\uD83D\uDED2" title="No orders" sub="Create your first order" action={<button className="btn btn-p" onClick={()=>{setForm(defOrder());setOItems([]);setModal({mode:"add"})}}>+ New Order</button>} /> : (
+      {filtered.length===0 ? <Empty icon="🛒" title="No orders" sub="Create your first order" action={<button className="btn btn-p" onClick={()=>{setForm(defOrder());setOItems([]);setModal({mode:"add"})}}>+ New Order</button>} /> : (
         <div className="tw"><table>
           <thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Platform</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>{filtered.map(o=>(
@@ -557,7 +557,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
               <td className="mono amber fw6">${fmt(o.total)}</td>
               <td><Badge label={o.status} color={SC[o.status]} /></td>
               <td><div className="flex gap8">
-                {o.status==="Pending"&&!o.fulfillmentId&&<button className="btn btn-ok btn-xs" onClick={()=>sendFulfill(o)}>\u2192 Fulfill</button>}
+                {o.status==="Pending"&&!o.fulfillmentId&&<button className="btn btn-ok btn-xs" onClick={()=>sendFulfill(o)}>→ Fulfill</button>}
                 {o.fulfillmentId&&<Badge label="In Fulfillment" color="#8b5cf6" />}
                 <button className="btn btn-g btn-xs" onClick={()=>{setForm({...o});setOItems([...o.items]);setModal({mode:"edit"})}}>Edit</button>
                 <button className="btn btn-d btn-xs" onClick={()=>{if(confirm("Delete order? This will also remove it from Fulfillment.")){setOrders(p=>p.filter(x=>x.id!==o.id));setFulfillments(p=>p.filter(f=>f.orderId!==o.id&&f.id!==o.fulfillmentId))}}}>Del</button>
@@ -588,15 +588,15 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
               <label className="fl">Tracking / Label Number</label>
               <input className="inp" value={form.trackingNumber||""} onChange={(e)=>setForm(p=>({...p,trackingNumber:e.target.value}))}
                 placeholder="Pre-assign label before fulfilment" style={{fontFamily:"var(--mono)"}} />
-              {form.trackingNumber&&<div style={{fontSize:10,color:"var(--t3)",marginTop:4,fontFamily:"var(--mono)"}}>\u26A1 Will be verified at fulfilment scan step</div>}
+              {form.trackingNumber&&<div style={{fontSize:10,color:"var(--t3)",marginTop:4,fontFamily:"var(--mono)"}}>⚡ Will be verified at fulfilment scan step</div>}
             </div>
           </div>
           <div className="div" />
           <div className="fl" style={{marginBottom:9}}>Line Items</div>
           <div style={{display:"flex",gap:8,marginBottom:11}}>
             <select className="sel" value={selSku} onChange={(e)=>setSelSku(e.target.value)} style={{flex:2}}>
-              <option value="">\u2014 Select Product \u2014</option>
-              {products.map(i=><option key={i.sku} value={i.sku}>{i.sku} \u2014 {i.name} [{i.condition}] (Qty:{i.quantity})</option>)}
+              <option value="">— Select Product —</option>
+              {products.map(i=><option key={i.sku} value={i.sku}>{i.sku} — {i.name} [{i.condition}] (Qty:{i.quantity})</option>)}
             </select>
             <input className="inp" type="number" min="1" value={oQty||""} onChange={(e)=>setOQty(+e.target.value)} style={{width:65}} />
             <button className="btn btn-g" onClick={addLine} disabled={!selSku}>Add</button>
@@ -611,7 +611,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
                     <td><Badge label={item.condition} color={SC[item.condition]||"#6b7280"} /></td>
                     <td className="mono">{item.qty}</td><td className="mono">${fmt(item.price)}</td>
                     <td className="mono amber">${fmt(item.price*item.qty)}</td>
-                    <td><button className="btn btn-d btn-xs" onClick={()=>setOItems(p=>p.filter(x=>x.sku!==item.sku))}>\u00D7</button></td>
+                    <td><button className="btn btn-d btn-xs" onClick={()=>setOItems(p=>p.filter(x=>x.sku!==item.sku))}>×</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -624,12 +624,12 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // FULFILLMENT
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const Pipeline = ({status}) => {
   const idx = FULFILLMENT_STEPS.indexOf(status);
-  const icons = ["\uD83D\uDCCB","\uD83D\uDD0D","\uD83D\uDCE6","\uD83D\uDE80","\uD83C\uDFF7","\u2705"];
+  const icons = ["📋","🔍","📦","🚀","🏷","✅"];
   return (
     <div className="pipe">
       {FULFILLMENT_STEPS.map((step,i)=>(
@@ -746,16 +746,16 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
   return (
     <div className={`fcard ${open?"open":""}`} style={{borderColor:open?SC[s]+"55":"var(--b1)"}}>
       <div className="fch" onClick={()=>setOpen(x=>!x)}>
-        <div style={{fontSize:18}}>{open?"\u25BE":"\u25B8"}</div>
+        <div style={{fontSize:18}}>{open?"▾":"▸"}</div>
         <div>
           <div style={{fontFamily:"var(--mono)",fontWeight:700,color:"var(--amber)",fontSize:14}}>{f.orderRef}</div>
-          <div className="sm muted">{f.customerName} \u00B7 <span className="pp" style={{fontSize:10}}>{f.platform}</span></div>
+          <div className="sm muted">{f.customerName} · <span className="pp" style={{fontSize:10}}>{f.platform}</span></div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginLeft:"auto"}}>
-          <div className="sm muted mono">{f.items.length} items \u00B7 ${fmt(f.total)}</div>
+          <div className="sm muted mono">{f.items.length} items · ${fmt(f.total)}</div>
           <Badge label={s} color={SC[s]} />
           <button className="btn btn-d btn-xs" style={{fontSize:10,padding:"2px 7px"}}
-            onClick={function(e){ e.stopPropagation(); if(confirm("Remove this fulfillment record?")) setFulfillments(function(p){ return p.filter(function(x){ return x.id!==f.id; }); }); }}>\u2715</button>
+            onClick={function(e){ e.stopPropagation(); if(confirm("Remove this fulfillment record?")) setFulfillments(function(p){ return p.filter(function(x){ return x.id!==f.id; }); }); }}>✕</button>
         </div>
       </div>
 
@@ -765,7 +765,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
 
           {/* Items table */}
           <div className="card mb16">
-            <div className="ch"><span className="ct">\uD83D\uDCE6 Order Items & Locations</span></div>
+            <div className="ch"><span className="ct">📦 Order Items & Locations</span></div>
             <table>
               <thead><tr><th>Barcode / SKU</th><th>Product</th><th>Condition</th><th>Location</th><th>Qty</th><th>Picked</th><th>Packed</th></tr></thead>
               <tbody>
@@ -783,11 +783,11 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                       <td><div className="fw6">{oi.name}</div></td>
                       <td><Badge label={oi.condition} color={SC[oi.condition]||"#6b7280"} /></td>
                       <td>{inv&&inv.location
-                        ?<span style={{background:"var(--adim)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:11,padding:"2px 8px",borderRadius:5,border:"1px solid rgba(245,166,35,.28)"}}>\uD83D\uDCCD {inv.location}</span>
+                        ?<span style={{background:"var(--adim)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:11,padding:"2px 8px",borderRadius:5,border:"1px solid rgba(245,166,35,.28)"}}>📍 {inv.location}</span>
                         :<span className="muted sm">No location set</span>}</td>
                       <td className="mono">{oi.qty}</td>
-                      <td>{picked?<span className="green fw6">\u2713</span>:<span className="muted">\u2014</span>}</td>
-                      <td>{packed?<span className="green fw6">\u2713</span>:<span className="muted">\u2014</span>}</td>
+                      <td>{picked?<span className="green fw6">✓</span>:<span className="muted">—</span>}</td>
+                      <td>{packed?<span className="green fw6">✓</span>:<span className="muted">—</span>}</td>
                     </tr>
                   );
                 })}
@@ -799,14 +799,14 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
           {(s==="Awaiting Picking"||s==="Picking") && (
             <div className="card mb16">
               <div className="ch">
-                <span className="ct">\uD83D\uDD0D Step 1 \u2014 Pick Items</span>
+                <span className="ct">🔍 Step 1 — Pick Items</span>
                 <span className="sm muted mono">{f.pickedSkus.length}/{f.items.length} scanned</span>
               </div>
               <div className="cb">
                 {pendingPickSku ? (
                   <div style={{background:"var(--s2)",borderRadius:10,padding:"14px",border:"1px solid var(--amber)"}}>
                     <div style={{color:"var(--amber)",fontWeight:700,marginBottom:8,fontFamily:"var(--mono)",fontSize:13}}>
-                      {"\uD83D\uDCCD Confirm location for: "+pendingPickSku}
+                      {"📍 Confirm location for: "+pendingPickSku}
                     </div>
                     <div style={{fontSize:12,color:"var(--t2)",marginBottom:10}}>Select or scan shelf location</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
@@ -818,7 +818,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                           <button key={loc.id} className="btn btn-s"
                             style={{background:"var(--s3)",border:"1px solid var(--b1)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:11}}
                             onClick={function(){ confirmPickLocation(pendingPickSku, loc.name); }}>
-                            {"\uD83D\uDCCD "+loc.name+qtyLabel}
+                            {"📍 "+loc.name+qtyLabel}
                           </button>
                         );
                       })}
@@ -830,17 +830,17 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                 ) : (
                   <ScanIn label="Scan product SKU barcode to pick" onScan={onPickScan} />
                 )}
-                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>\u26A0 {err}</div>}
+                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
                 <div className="mt12">
                   {f.items.map(oi=>{
                     const done=f.pickedSkus.includes(oi.sku);
                     const inv=products.find(p=>p.sku===oi.sku);
                     return (
                       <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid var(--b1)"}}>
-                        <span style={{fontSize:15}}>{done?"\u2705":"\u2B1C"}</span>
+                        <span style={{fontSize:15}}>{done?"✅":"⬜"}</span>
                         <BC value={oi.sku} h={20} small />
                         <span style={{fontSize:13,color:done?"var(--green)":"var(--t2)"}}>{oi.name}</span>
-                        {inv&&inv.location&&<span style={{marginLeft:"auto",color:"var(--amber)",fontSize:11,fontFamily:"var(--mono)"}}>\uD83D\uDCCD {inv.location}</span>}
+                        {inv&&inv.location&&<span style={{marginLeft:"auto",color:"var(--amber)",fontSize:11,fontFamily:"var(--mono)"}}>📍 {inv.location}</span>}
                       </div>
                     );
                   })}
@@ -853,27 +853,27 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
           {inPacking && (
             <div className="card mb16">
               <div className="ch">
-                <span className="ct">\uD83D\uDCE6 Step 2 \u2014 Select Packaging</span>
-                {f.packaging&&<Badge label="\u2713 Confirmed" color="#10b981" />}
+                <span className="ct">📦 Step 2 — Select Packaging</span>
+                {f.packaging&&<Badge label="✓ Confirmed" color="#10b981" />}
               </div>
               <div className="cb">
                 {sugPkg&&!f.packaging&&(
                   <div style={{background:"var(--adim)",border:"1px solid rgba(245,166,35,.22)",borderRadius:8,padding:"9px 13px",marginBottom:13}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"var(--amber)",marginBottom:3}}>\uD83D\uDCA1 SUGGESTED PACKAGING</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"var(--amber)",marginBottom:3}}>💡 SUGGESTED PACKAGING</div>
                     <div style={{fontSize:14,fontWeight:600}}>{(PKG_TYPES.find(p=>p.type===sugPkg)||{}).icon} {sugPkg}</div>
                     <div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>Based on product dimensions & weight</div>
                   </div>
                 )}
                 {packaging.length>0 ? (
                   <>
-                    <div className="fl" style={{marginBottom:9}}>Available Packaging \u2014 Click or scan to confirm</div>
+                    <div className="fl" style={{marginBottom:9}}>Available Packaging — Click or scan to confirm</div>
                     <div className="pkg-grid mb12">
                       {packaging.map(pkg=>(
                         <div key={pkg.sku} className={`pko ${f.packaging===pkg.sku?"sel":""}`} onClick={()=>upd({packaging:pkg.sku,packagingName:pkg.name})}>
-                          <div className="pko-icon">{(PKG_TYPES.find(p=>p.type===pkg.pkgType)||{}).icon||"\uD83D\uDCE6"}</div>
+                          <div className="pko-icon">{(PKG_TYPES.find(p=>p.type===pkg.pkgType)||{}).icon||"📦"}</div>
                           <div className="pko-name">{pkg.name}</div>
                           <div className="pko-dims">{pkg.sku}</div>
-                          {pkg.dimL>0&&<div className="pko-dims">{pkg.dimL}\u00D7{pkg.dimW}\u00D7{pkg.dimH}in</div>}
+                          {pkg.dimL>0&&<div className="pko-dims">{pkg.dimL}×{pkg.dimW}×{pkg.dimH}in</div>}
                         </div>
                       ))}
                     </div>
@@ -881,13 +881,13 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                     <div style={{marginTop:10}}>
                       <button className="btn btn-s w100" style={{background:f.packaging==="SHIP-AS-IS"?"rgba(16,185,129,.15)":"var(--s2)",color:f.packaging==="SHIP-AS-IS"?"var(--green)":"var(--t2)",border:f.packaging==="SHIP-AS-IS"?"1px solid rgba(16,185,129,.3)":"1px solid var(--b1)"}}
                         onClick={()=>upd({packaging:"SHIP-AS-IS",packagingName:"Ship as-is (original packaging)",supplyUsed:null})}>
-                        {f.packaging==="SHIP-AS-IS"?"\u2713 ":""} \uD83D\uDCEB Ship as-is (original packaging)
+                        {f.packaging==="SHIP-AS-IS"?"✓ ":""} 📫 Ship as-is (original packaging)
                       </button>
                     </div>
                     {/* Supplies from Supplies section */}
                     {supplies && supplies.length>0 && (
                       <div style={{marginTop:12}}>
-                        <div className="fl mb8" style={{color:"var(--amber)"}}>\uD83D\uDDC2\uFE0F Packing Supplies</div>
+                        <div className="fl mb8" style={{color:"var(--amber)"}}>🗂️ Packing Supplies</div>
                         <div className="pkg-grid">
                           {supplies.map(sup=>{
                             const avail=(sup.bundleQty*sup.unitsPerBundle)-sup.unitsUsed;
@@ -896,7 +896,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                               <div key={sup.id} className={`pko ${sel?"sel":""} ${avail<=0?"disabled":""}`}
                                 onClick={()=>avail>0&&confirmSupplyUse(sup)}
                                 style={{opacity:avail<=0 ? 0.45:1,cursor:avail<=0?"not-allowed":"pointer"}}>
-                                <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"\uD83D\uDCE6"}</div>
+                                <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"📦"}</div>
                                 <div className="pko-name">{sup.name}</div>
                                 <div className="pko-dims" style={{color:avail<=sup.reorderPoint?"var(--red)":"var(--t3)"}}>
                                   {avail<=0?"OUT OF STOCK":avail+" left"}
@@ -910,7 +910,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                   </>
                 ) : supplies && supplies.length>0 ? (
                   <div>
-                    <div className="fl mb8">\uD83D\uDDC2\uFE0F Select from Packing Supplies</div>
+                    <div className="fl mb8">🗂️ Select from Packing Supplies</div>
                     <div className="pkg-grid mb12">
                       {supplies.map(sup=>{
                         const avail=(sup.bundleQty*sup.unitsPerBundle)-sup.unitsUsed;
@@ -919,7 +919,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                           <div key={sup.id} className={`pko ${sel?"sel":""}`}
                             onClick={()=>avail>0&&confirmSupplyUse(sup)}
                             style={{opacity:avail<=0 ? 0.45:1,cursor:avail<=0?"not-allowed":"pointer"}}>
-                            <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"\uD83D\uDCE6"}</div>
+                            <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"📦"}</div>
                             <div className="pko-name">{sup.name}</div>
                             <div className="pko-dims" style={{color:avail<=sup.reorderPoint?"var(--red)":"var(--t3)"}}>{avail<=0?"OUT OF STOCK":avail+" left"}</div>
                           </div>
@@ -930,7 +930,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                     <div style={{marginTop:10}}>
                       <button className="btn btn-s w100" style={{background:f.packaging==="SHIP-AS-IS"?"rgba(16,185,129,.15)":"var(--s2)",color:f.packaging==="SHIP-AS-IS"?"var(--green)":"var(--t2)"}}
                         onClick={()=>upd({packaging:"SHIP-AS-IS",packagingName:"Ship as-is (original packaging)",supplyUsed:null})}>
-                        {f.packaging==="SHIP-AS-IS"?"\u2713 ":""} \uD83D\uDCEB Ship as-is (original packaging)
+                        {f.packaging==="SHIP-AS-IS"?"✓ ":""} 📫 Ship as-is (original packaging)
                       </button>
                     </div>
                   </div>
@@ -945,18 +945,18 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
           {inPacking && (
             <div className="card mb16">
               <div className="ch">
-                <span className="ct">\u2705 Step 2b \u2014 Scan Items Into Package</span>
+                <span className="ct">✅ Step 2b — Scan Items Into Package</span>
                 <span className="sm muted mono">{f.packedSkus.length}/{f.items.length} packed</span>
               </div>
               <div className="cb">
                 <ScanIn label="Scan each item as it goes into the package" onScan={onPackScan} />
-                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>\u26A0 {err}</div>}
+                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
                 <div className="mt12">
                   {f.items.map(oi=>{
                     const done=f.packedSkus.includes(oi.sku);
                     return (
                       <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid var(--b1)"}}>
-                        <span style={{fontSize:15}}>{done?"\u2705":"\u2B1C"}</span>
+                        <span style={{fontSize:15}}>{done?"✅":"⬜"}</span>
                         <BC value={oi.sku} h={20} small />
                         <span style={{fontSize:13,color:done?"var(--green)":"var(--t2)"}}>{oi.name}</span>
                       </div>
@@ -970,7 +970,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
           {/* Dimensions */}
           {inPacking && (
             <div className="card mb16">
-              <div className="ch"><span className="ct">\uD83D\uDCD0 Package Dimensions & Weight</span></div>
+              <div className="ch"><span className="ct">📐 Package Dimensions & Weight</span></div>
               <div className="cb">
                 <div className="r4">
                   {[["L (in)","packageL"],["W (in)","packageW"],["H (in)","packageH"],["Weight (lbs)","packageWeight"]].map(([lbl,k])=>(
@@ -981,10 +981,10 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                 </div>
                 {s==="Packing" && (
                   <>
-                    <button className="btn btn-p w100" disabled={!canReady} onClick={markReady} style={{marginTop:4}}>\uD83D\uDE80 Mark Ready to Ship</button>
+                    <button className="btn btn-p w100" disabled={!canReady} onClick={markReady} style={{marginTop:4}}>🚀 Mark Ready to Ship</button>
                     {!canReady && (
                       <div style={{color:"var(--t3)",fontSize:11,marginTop:5,fontFamily:"var(--mono)"}}>
-                        {!allPacked&&"\u00B7 Pack all items  "}{!f.packaging&&"\u00B7 Select packaging  "}{!f.packageWeight&&"\u00B7 Enter weight"}
+                        {!allPacked&&"· Pack all items  "}{!f.packaging&&"· Select packaging  "}{!f.packageWeight&&"· Enter weight"}
                       </div>
                     )}
                   </>
@@ -997,16 +997,16 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
           {(s==="Ready to Ship"||s==="Label Assigned"||s==="Fulfilled") && (
             <div className={`scard ${s==="Ready to Ship"?"ready":s==="Label Assigned"?"labeled":"done"}`}>
               <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:13}}>
-                <div style={{fontSize:22}}>{s==="Fulfilled"?"\u2705":s==="Label Assigned"?"\uD83C\uDFF7":"\uD83D\uDE80"}</div>
+                <div style={{fontSize:22}}>{s==="Fulfilled"?"✅":s==="Label Assigned"?"🏷":"🚀"}</div>
                 <div>
                   <div style={{fontWeight:700,fontSize:15}}>{s==="Fulfilled"?"Fully Fulfilled":s==="Label Assigned"?"Label Assigned":"Ready to Ship"}</div>
-                  <div className="sm muted">{f.orderRef} \u00B7 {f.customerName}</div>
+                  <div className="sm muted">{f.orderRef} · {f.customerName}</div>
                 </div>
                 <div style={{marginLeft:"auto"}}><Badge label={s} color={SC[s]} /></div>
               </div>
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:13}}>
-                {[["Package",`${f.packageL}\u00D7${f.packageW}\u00D7${f.packageH} in`],["Weight",`${f.packageWeight} lbs`],["Packaging",f.packagingName||f.packaging||"\u2014"],["Ship To",f.shippingAddress||"\u2014"]].map(([k,v])=>(
+                {[["Package",`${f.packageL}×${f.packageW}×${f.packageH} in`],["Weight",`${f.packageWeight} lbs`],["Packaging",f.packagingName||f.packaging||"—"],["Ship To",f.shippingAddress||"—"]].map(([k,v])=>(
                   <div key={k} style={{background:"var(--s2)",borderRadius:7,padding:"8px 11px"}}>
                     <div className="sm muted">{k}</div>
                     <div style={{fontFamily:"var(--mono)",fontSize:12,marginTop:2}}>{v}</div>
@@ -1018,35 +1018,35 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                 <div>
                   {f.labelTrackingNumber ? (
                     <div style={{background:"rgba(16,185,129,.07)",border:"1px solid rgba(16,185,129,.22)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                      <div style={{fontSize:11,color:"var(--green)",fontWeight:700,marginBottom:3}}>\uD83C\uDFF7 LABEL PRE-ASSIGNED</div>
+                      <div style={{fontSize:11,color:"var(--green)",fontWeight:700,marginBottom:3}}>🏷 LABEL PRE-ASSIGNED</div>
                       <div style={{fontFamily:"var(--mono)",fontSize:13,marginBottom:4}}>{f.labelTrackingNumber}</div>
                       <div style={{fontSize:11,color:"var(--t3)"}}>Label was set on the order. Scan below to verify and mark as shipped.</div>
                     </div>
                   ) : (
                     <div style={{background:"rgba(59,130,246,.07)",border:"1px solid rgba(59,130,246,.18)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                      <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:3}}>\uD83D\uDCCB NEXT STEP</div>
+                      <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:3}}>📋 NEXT STEP</div>
                       <div style={{fontSize:12,color:"var(--t2)"}}>Generate your shipping label in your external carrier system, then scan or type the tracking number below to assign it.</div>
                     </div>
                   )}
-                  <ScanIn label="Scan tracking number to confirm label" placeholder="Scan tracking barcode \u2192 Enter" onScan={onLabelScan} />
+                  <ScanIn label="Scan tracking number to confirm label" placeholder="Scan tracking barcode → Enter" onScan={onLabelScan} />
                 </div>
               )}
 
               {s==="Label Assigned" && (
                 <div>
                   <div style={{background:"rgba(6,182,212,.07)",border:"1px solid rgba(6,182,212,.22)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                    <div style={{fontSize:11,color:"var(--cyan)",fontWeight:700,marginBottom:3}}>\uD83C\uDFF7 LABEL ASSIGNED</div>
+                    <div style={{fontSize:11,color:"var(--cyan)",fontWeight:700,marginBottom:3}}>🏷 LABEL ASSIGNED</div>
                     <div style={{fontFamily:"var(--mono)",fontSize:13}}>{f.labelTrackingNumber}</div>
                     <div className="sm muted mt4">Now scan the label one more time to verify and complete fulfilment.</div>
                   </div>
-                  <ScanIn label="Final verification \u2014 scan the label to complete" placeholder="Scan label barcode \u2192 Enter" onScan={onVerify} />
-                  {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>\u26A0 {err}</div>}
+                  <ScanIn label="Final verification — scan the label to complete" placeholder="Scan label barcode → Enter" onScan={onVerify} />
+                  {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
                 </div>
               )}
 
               {s==="Fulfilled" && (
                 <div style={{textAlign:"center",padding:"8px 0"}}>
-                  <div style={{fontSize:30,marginBottom:7}}>\uD83C\uDF89</div>
+                  <div style={{fontSize:30,marginBottom:7}}>🎉</div>
                   <div style={{fontWeight:700,color:"var(--green)",fontSize:15}}>Order Completely Fulfilled</div>
                   <div className="mono sm muted mt4">Tracking: {f.labelTrackingNumber}</div>
                 </div>
@@ -1078,7 +1078,7 @@ const Fulfillment = ({fulfillments,setFulfillments,inventory,locations,setInvent
         ].map(s=><div className="sc" key={s.label} style={{"--ac":s.ac}}><div className="sl">{s.label}</div><div className="sv">{s.value}</div></div>)}
       </div>
       <div className="fb">
-        <div className="sw"><span className="si">\u2B21</span><input className="inp" placeholder="Search..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
+        <div className="sw"><span className="si">⬡</span><input className="inp" placeholder="Search..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
       </div>
       <div className="tabs">
         <button className={`tab ${tab==="active"?"on":""}`} onClick={()=>setTab("active")}>Active ({active.length})</button>
@@ -1086,16 +1086,16 @@ const Fulfillment = ({fulfillments,setFulfillments,inventory,locations,setInvent
         <button className={`tab ${tab==="done"?"on":""}`} onClick={()=>setTab("done")}>Fulfilled ({fulfilled.length})</button>
       </div>
       {shown.length===0
-        ?<Empty icon="\uD83D\uDCEC" title="Nothing here" sub={tab==="active"?"Send orders to fulfillment from Orders tab":tab==="ready"?"No packages ready yet":"Fulfilled orders appear here"} />
+        ?<Empty icon="📬" title="Nothing here" sub={tab==="active"?"Send orders to fulfillment from Orders tab":tab==="ready"?"No packages ready yet":"Fulfilled orders appear here"} />
         :shown.map(f=><FCard key={f.id} f={f} inventory={inventory} setFulfillments={setFulfillments} setOrders={setOrders} />)
       }
     </div>
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // SUPPLIERS
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const defPO = () => ({id:genId(),poNumber:`PO-${Date.now().toString().slice(-6)}`,supplier:"",contactEmail:"",date:today(),expectedDate:"",status:"Draft",notes:"",items:[],total:0});
 
 const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) => {
@@ -1141,16 +1141,16 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
   return (
     <div>
       <div className="fb">
-        <div className="sw"><span className="si">\u2B21</span><input className="inp" placeholder="Search POs..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
+        <div className="sw"><span className="si">⬡</span><input className="inp" placeholder="Search POs..." value={q} onChange={(e)=>setQ(e.target.value)} /></div>
         <button className="btn btn-p" onClick={()=>{setForm(defPO());setPis([]);setModal({mode:"add"})}}>+ New PO</button>
       </div>
-      {filt.length===0?<Empty icon="\uD83C\uDFED" title="No purchase orders" sub="Create your first PO" action={<button className="btn btn-p" onClick={()=>{setForm(defPO());setPis([]);setModal({mode:"add"})}}>+ New PO</button>} />:(
+      {filt.length===0?<Empty icon="🏭" title="No purchase orders" sub="Create your first PO" action={<button className="btn btn-p" onClick={()=>{setForm(defPO());setPis([]);setModal({mode:"add"})}}>+ New PO</button>} />:(
         <div className="tw"><table><thead><tr><th>PO #</th><th>Supplier</th><th>Date</th><th>Expected</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>{filt.map(po=>(
             <tr key={po.id}>
               <td><span className="mono fw6 amber">{po.poNumber}</span></td>
               <td><div className="fw6">{po.supplier}</div>{po.contactEmail&&<div className="sm muted">{po.contactEmail}</div>}</td>
-              <td className="mono sm">{po.date}</td><td className="mono sm">{po.expectedDate||<span className="muted">\u2014</span>}</td>
+              <td className="mono sm">{po.date}</td><td className="mono sm">{po.expectedDate||<span className="muted">—</span>}</td>
               <td className="mono">{po.items.length}</td><td className="mono amber fw6">${fmt(po.total)}</td>
               <td><select className="sel" style={{width:"auto",padding:"3px 8px",fontSize:12}} value={po.status} onChange={(e)=>setSuppliers(p=>p.map(s=>s.id===po.id?{...s,status:e.target.value}:s))}>{SUPPLIER_STATUSES.map(s=><option key={s}>{s}</option>)}</select></td>
               <td><div className="flex gap8">
@@ -1183,14 +1183,14 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
           <div className="fl" style={{marginBottom:9}}>Items</div>
           <div style={{display:"flex",gap:8,marginBottom:11}}>
             <select className="sel" value={ss} onChange={(e)=>{setSs(e.target.value);const inv=inventory.find(i=>i.sku===e.target.value);setSp(inv&&inv.costPrice||0);}} style={{flex:2}}>
-              <option value="">\u2014 SKU \u2014</option>{inventory.map(i=><option key={i.sku} value={i.sku}>{i.sku} \u2014 {i.name}</option>)}
+              <option value="">— SKU —</option>{inventory.map(i=><option key={i.sku} value={i.sku}>{i.sku} — {i.name}</option>)}
             </select>
             <input className="inp" type="number" min="1" value={sq||""} onChange={(e)=>setSq(+e.target.value)} style={{width:60}} />
             <input className="inp" type="number" min="0" step="0.01" value={sp||""} onChange={(e)=>setSp(+e.target.value)} style={{width:75}} placeholder="$" />
             <button className="btn btn-g" onClick={addI} disabled={!ss}>Add</button>
           </div>
           {pis.length>0&&<div className="tw mb12"><table><thead><tr><th>SKU</th><th>Name</th><th>Qty</th><th>Unit</th><th>Total</th><th></th></tr></thead>
-            <tbody>{pis.map(item=><tr key={item.sku}><td className="mono">{item.sku}</td><td>{item.name}</td><td className="mono">{item.qty}</td><td className="mono">${fmt(item.unitCost)}</td><td className="mono amber">${fmt(item.unitCost*item.qty)}</td><td><button className="btn btn-d btn-xs" onClick={()=>setPis(p=>p.filter(x=>x.sku!==item.sku))}>\u00D7</button></td></tr>)}
+            <tbody>{pis.map(item=><tr key={item.sku}><td className="mono">{item.sku}</td><td>{item.name}</td><td className="mono">{item.qty}</td><td className="mono">${fmt(item.unitCost)}</td><td className="mono amber">${fmt(item.unitCost*item.qty)}</td><td><button className="btn btn-d btn-xs" onClick={()=>setPis(p=>p.filter(x=>x.sku!==item.sku))}>×</button></td></tr>)}
             <tr style={{background:"var(--s2)"}}><td colSpan={4} style={{textAlign:"right",fontWeight:700}}>Total</td><td className="mono fw6 amber">${fmt(tot(pis))}</td><td/></tr>
             </tbody></table></div>}
           <div className="fg"><label className="fl">Notes</label><textarea className="ta" value={form.notes} onChange={(e)=>setForm(p=>({...p,notes:e.target.value}))} /></div>
@@ -1198,7 +1198,7 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
       )}
 
       {rcvModal&&(
-        <Modal title={"Receive PO \u2014 "+rcvModal.poNumber} onClose={function(){ setRcvModal(null); }} size="mlg"
+        <Modal title={"Receive PO — "+rcvModal.poNumber} onClose={function(){ setRcvModal(null); }} size="mlg"
           footer={
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <button className="btn btn-g" onClick={function(){ setRcvModal(null); }}>Cancel</button>
@@ -1207,7 +1207,7 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
           }>
           <div style={{background:"var(--s2)",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"var(--t3)"}}>
             {"Supplier: "}<strong style={{color:"var(--t1)"}}>{rcvModal.supplier}</strong>
-            {" \u00B7 PO: "}<span style={{fontFamily:"var(--mono)",color:"var(--amber)"}}>{rcvModal.poNumber}</span>
+            {" · PO: "}<span style={{fontFamily:"var(--mono)",color:"var(--amber)"}}>{rcvModal.poNumber}</span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {rcvLines.map(function(rl,ri){
@@ -1247,7 +1247,7 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
                                   color:rl.loc===loc?"var(--amber)":"var(--t3)",
                                   border:rl.loc===loc?"1px solid rgba(224,48,48,.4)":"1px solid var(--b1)"}}
                                 onClick={function(){ setRcvLines(function(p){ return p.map(function(x,j){ return j===ri?Object.assign({},x,{loc:loc}):x; }); }); }}>
-                                {"\uD83D\uDCCD "+loc}
+                                {"📍 "+loc}
                               </button>
                             );
                           })}
@@ -1265,13 +1265,13 @@ const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) =>
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // LOCATIONS
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // SUPPLIES
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const defSupply = () => ({
   id:genId(), name:"", sku:"SUP-"+Date.now().toString().slice(-6),
   type:"Poly Mailer", unitsPerBundle:1, bundleQty:0, unitsUsed:0,
@@ -1316,7 +1316,7 @@ const Supplies = ({supplies,setSupplies}) => {
       {/* Low stock alert banner */}
       {lowCount>0 && (
         <div style={{background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.22)",borderRadius:10,padding:"11px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:18}}>\u26A0\uFE0F</span>
+          <span style={{fontSize:18}}>⚠️</span>
           <div>
             <div style={{fontWeight:700,color:"var(--red)",fontSize:13}}>{lowCount} supply item{lowCount>1?"s":""} at or below reorder point</div>
             <div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>Check items highlighted in red below and restock as needed.</div>
@@ -1326,7 +1326,7 @@ const Supplies = ({supplies,setSupplies}) => {
 
       {/* Toolbar */}
       <div className="fb mb16" style={{gap:10}}>
-        <div className="sw"><span className="si">\u25CB</span>
+        <div className="sw"><span className="si">○</span>
           <input className="inp" placeholder="Search supplies..." value={q} onChange={e=>setQ(e.target.value)} />
         </div>
         <button className="btn btn-p" onClick={()=>{setForm(defSupply());setModal("add");}}>+ Add Supply</button>
@@ -1334,7 +1334,7 @@ const Supplies = ({supplies,setSupplies}) => {
 
       {/* Table */}
       {filt.length===0 ? (
-        <Empty icon="\uD83D\uDDC2\uFE0F" title="No supplies yet" sub="Add poly bags, bubble mailers, boxes and other packing supplies"
+        <Empty icon="🗂️" title="No supplies yet" sub="Add poly bags, bubble mailers, boxes and other packing supplies"
           action={<button className="btn btn-p" onClick={()=>{setForm(defSupply());setModal("add");}}>+ Add Supply</button>} />
       ) : (
         <div className="tw"><table>
@@ -1355,7 +1355,7 @@ const Supplies = ({supplies,setSupplies}) => {
               const avail=supAvail(s);
               const low=avail<=s.reorderPoint;
               const stc=avail===0?"#ef4444":low?"#f59e0b":"#10b981";
-              const typeInfo=SUPPLY_TYPES.find(t=>t.type===s.type)||{icon:"\uD83D\uDCE6",unit:"each"};
+              const typeInfo=SUPPLY_TYPES.find(t=>t.type===s.type)||{icon:"📦",unit:"each"};
               return (
                 <tr key={s.id} style={{borderLeft:low?"3px solid var(--red)":"3px solid transparent"}}>
                   <td>
@@ -1373,14 +1373,14 @@ const Supplies = ({supplies,setSupplies}) => {
                     <span style={{fontSize:18,marginRight:5}}>{typeInfo.icon}</span>
                     <span style={{fontSize:12,color:"var(--t2)"}}>{s.type}</span>
                   </td>
-                  <td><span className="mono" style={{fontSize:12}}>{s.location||<span className="muted">\u2014</span>}</span></td>
+                  <td><span className="mono" style={{fontSize:12}}>{s.location||<span className="muted">—</span>}</span></td>
                   <td>
                     <span className="mono fw6" style={{color:stc,fontSize:15}}>{avail}</span>
                     <div className="sm muted" style={{fontSize:10}}>{typeInfo.unit}s</div>
                     <div className="sbar"><div className="sfill" style={{background:stc,width:`${Math.min((avail/Math.max(s.reorderPoint*3,1))*100,100)}%`}} /></div>
                   </td>
                   <td>
-                    <span className="mono" style={{fontSize:12}}>{s.bundleQty} \u00D7 {s.unitsPerBundle}</span>
+                    <span className="mono" style={{fontSize:12}}>{s.bundleQty} × {s.unitsPerBundle}</span>
                   </td>
                   <td><span className="mono" style={{fontSize:12,color:low?"var(--red)":"var(--t3)"}}>{s.reorderPoint}</span></td>
                   <td><span className="mono" style={{fontSize:12}}>${fmt(s.cost)}</span></td>
@@ -1408,16 +1408,16 @@ const Supplies = ({supplies,setSupplies}) => {
         </table></div>
       )}
 
-      {/* Barcode Modal \u2014 same as inventory */}
+      {/* Barcode Modal — same as inventory */}
       {bcModal && (
-        <Modal title={`Barcode \u2014 ${bcModal.sku}`} onClose={()=>setBcModal(null)}
+        <Modal title={`Barcode — ${bcModal.sku}`} onClose={()=>setBcModal(null)}
           footer={<button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:15,padding:"8px 0"}}>
-            <div style={{fontSize:42,lineHeight:1}}>{(SUPPLY_TYPES.find(t=>t.type===bcModal.type)||{}).icon||"\uD83D\uDCE6"}</div>
+            <div style={{fontSize:42,lineHeight:1}}>{(SUPPLY_TYPES.find(t=>t.type===bcModal.type)||{}).icon||"📦"}</div>
             <div style={{fontSize:16,fontWeight:700,textAlign:"center"}}>{bcModal.name}</div>
             <BC value={bcModal.sku} h={80} />
             <div style={{display:"flex",gap:20,flexWrap:"wrap",justifyContent:"center"}}>
-              {[["Type",bcModal.type],["Available",supAvail(bcModal)+" "+( (SUPPLY_TYPES.find(t=>t.type===bcModal.type)||{}).unit||"")+"s"],["Location",bcModal.location||"\u2014"],["Reorder at",bcModal.reorderPoint]].map(([k,v])=>(
+              {[["Type",bcModal.type],["Available",supAvail(bcModal)+" "+( (SUPPLY_TYPES.find(t=>t.type===bcModal.type)||{}).unit||"")+"s"],["Location",bcModal.location||"—"],["Reorder at",bcModal.reorderPoint]].map(([k,v])=>(
                 <div key={k} className="sm muted" style={{textAlign:"center"}}>
                   <div style={{fontSize:10,marginBottom:2}}>{k}</div>
                   <div style={{color:"var(--amber)",fontFamily:"var(--mono)",fontSize:13}}>{v}</div>
@@ -1439,7 +1439,7 @@ const Supplies = ({supplies,setSupplies}) => {
 
           <div className="r2 mb12">
             <div className="fg"><label className="fl">Supply Name *</label>
-              <input className="inp" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Poly Mailer 6\u00D79 inch" /></div>
+              <input className="inp" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Poly Mailer 6×9 inch" /></div>
             <div className="fg"><label className="fl">SKU</label>
               <input className="inp" value={form.sku} onChange={e=>setForm(p=>({...p,sku:e.target.value}))} placeholder="Auto-generated" /></div>
           </div>
@@ -1486,7 +1486,7 @@ const Supplies = ({supplies,setSupplies}) => {
 
       {/* Restock Modal */}
       {restockModal && (
-        <Modal title={"Restock \u2014 "+restockModal.name} onClose={()=>setRestockModal(null)}
+        <Modal title={"Restock — "+restockModal.name} onClose={()=>setRestockModal(null)}
           footer={<><button className="btn btn-g" onClick={()=>setRestockModal(null)}>Cancel</button>
             <button className="btn btn-p" onClick={doRestock}>+ Add Stock</button></>}>
           <div style={{background:"var(--s2)",borderRadius:8,padding:"11px 14px",marginBottom:14}}>
@@ -1496,7 +1496,7 @@ const Supplies = ({supplies,setSupplies}) => {
               {supAvail(restockModal)} {(SUPPLY_TYPES.find(t=>t.type===restockModal.type)||{}).unit}s available
             </div>
             <div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>
-              {restockModal.bundleQty} bundles \u00D7 {restockModal.unitsPerBundle} units each
+              {restockModal.bundleQty} bundles × {restockModal.unitsPerBundle} units each
             </div>
           </div>
           <div className="r2 mb12">
@@ -1528,7 +1528,7 @@ const Locations = ({locations,setLocations,inventory}) => {
       <div style={{display:"flex",justifyContent:"flex-end",marginBottom:17}}>
         <button className="btn btn-p" onClick={()=>{setForm({name:"",zone:"",description:""});setModal({mode:"add"})}}>+ Add Location</button>
       </div>
-      {locations.length===0?<Empty icon="\uD83D\uDCCD" title="No locations" sub="Add bins, shelves, or zones" action={<button className="btn btn-p" onClick={()=>{setForm({name:"",zone:"",description:""});setModal({mode:"add"})}}>+ Add</button>} />:(
+      {locations.length===0?<Empty icon="📍" title="No locations" sub="Add bins, shelves, or zones" action={<button className="btn btn-p" onClick={()=>{setForm({name:"",zone:"",description:""});setModal({mode:"add"})}}>+ Add</button>} />:(
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:13}}>
           {locations.map(loc=>{
             const ls=its(loc.name), qty=ls.reduce((s,i)=>s+i.quantity,0);
@@ -1568,9 +1568,9 @@ const Locations = ({locations,setLocations,inventory}) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // REPORTS
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const Reports = ({inventory,orders}) => {
   const prods=inventory.filter(i=>!i.isPackaging), pkgs=inventory.filter(i=>i.isPackaging);
   const low=prods.filter(i=>i.quantity>0&&i.quantity<=i.reorderPoint), oos=prods.filter(i=>i.quantity===0);
@@ -1584,8 +1584,8 @@ const Reports = ({inventory,orders}) => {
       </div>
       <div className="g2">
         <div className="card">
-          <div className="ch"><span className="ct">\u26A0 Stock Alerts</span><Badge label={low.length+oos.length} color="#ef4444" /></div>
-          {low.length===0&&oos.length===0?<Empty icon="\u2705" title="All stocked!" sub="" />:(
+          <div className="ch"><span className="ct">⚠ Stock Alerts</span><Badge label={low.length+oos.length} color="#ef4444" /></div>
+          {low.length===0&&oos.length===0?<Empty icon="✅" title="All stocked!" sub="" />:(
             <table><thead><tr><th>SKU</th><th>Product</th><th>Qty</th><th>Reorder</th><th>Status</th></tr></thead>
               <tbody>
                 {oos.map(i=><tr key={i.id}><td className="mono amber">{i.sku}</td><td>{i.name}</td><td className="mono red">0</td><td className="mono">{i.reorderPoint}</td><td><Badge label="OUT" color="#ef4444" /></td></tr>)}
@@ -1596,7 +1596,7 @@ const Reports = ({inventory,orders}) => {
         </div>
         <div className="card">
           <div className="ch"><span className="ct">Orders by Platform</span></div>
-          {platBreak.length===0?<Empty icon="\uD83D\uDCCA" title="No orders yet" sub="" />:(
+          {platBreak.length===0?<Empty icon="📊" title="No orders yet" sub="" />:(
             <table><thead><tr><th>Platform</th><th>Orders</th><th>Revenue</th></tr></thead>
               <tbody>{platBreak.map(p=><tr key={p.p}><td><span className="pp">{p.p}</span></td><td className="mono">{p.count}</td><td className="mono amber">${fmt(p.val)}</td></tr>)}</tbody>
             </table>
@@ -1607,9 +1607,9 @@ const Reports = ({inventory,orders}) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const Dashboard = ({inventory,orders,fulfillments,locations}) => {
   const prods=inventory.filter(i=>!i.isPackaging);
   const low=prods.filter(i=>i.quantity<=LOW_STOCK&&i.quantity>0), oos=prods.filter(i=>i.quantity===0);
@@ -1626,7 +1626,7 @@ const Dashboard = ({inventory,orders,fulfillments,locations}) => {
       <div className="g2">
         <div className="card">
           <div className="ch"><span className="ct">Recent Orders</span></div>
-          {recent.length===0?<Empty icon="\uD83D\uDED2" title="No orders yet" sub="" />:(
+          {recent.length===0?<Empty icon="🛒" title="No orders yet" sub="" />:(
             <table><thead><tr><th>Order ID</th><th>Platform</th><th>Status</th><th>Total</th></tr></thead>
               <tbody>{recent.map(o=><tr key={o.id}><td><span className="mono fw6 amber">{o.orderId}</span></td><td><span className="pp">{o.platform}</span></td><td><Badge label={o.status} color={SC[o.status]} /></td><td className="mono amber">${fmt(o.total)}</td></tr>)}</tbody>
             </table>
@@ -1634,7 +1634,7 @@ const Dashboard = ({inventory,orders,fulfillments,locations}) => {
         </div>
         <div className="card">
           <div className="ch"><span className="ct">Fulfillment Queue</span><Badge label={activeFull.length} color="#8b5cf6" /></div>
-          {activeFull.length===0?<Empty icon="\uD83D\uDCEC" title="Queue empty" sub="Send orders to fulfillment" />:(
+          {activeFull.length===0?<Empty icon="📬" title="Queue empty" sub="Send orders to fulfillment" />:(
             <div className="cb">
               {activeFull.slice(0,7).map(f=>(
                 <div className="ai" key={f.id}>
@@ -1654,16 +1654,16 @@ const Dashboard = ({inventory,orders,fulfillments,locations}) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
 // SUPABASE CLIENT LOADER
 // Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY with your real values
 // IMPORTANT: Run this SQL in Supabase to add the supplies table:
 // create table if not exists supplies (id text primary key, data jsonb not null, updated_at timestamptz default now());
 // create policy "anon_all" on supplies for all using (true) with check (true);
 // alter table supplies enable row level security;
-// from Supabase Dashboard \u2192 Project Settings \u2192 API
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// from Supabase Dashboard → Project Settings → API
+// ════════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = "https://fqswqxrstkppfuqxejaq.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxc3dxeHJzdGtwcGZ1cXhlamFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxODk4NDUsImV4cCI6MjA4ODc2NTg0NX0.bqxLwI7BZKAxB8oAYZwzevbn-gOKFrD31gZo8fe8vew";
 
@@ -1678,7 +1678,7 @@ const loadSupabase = () => new Promise((resolve) => {
   document.head.appendChild(s);
 });
 
-// \u2500\u2500 DB helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── DB helpers ───────────────────────────────────────────────────────────────
 // Each table stores one JSON row per record using the item's id as primary key.
 // Schema:  id TEXT PRIMARY KEY,  data JSONB,  updated_at TIMESTAMPTZ DEFAULT now()
 
@@ -1698,13 +1698,13 @@ const dbDelete = async (db, table, id) => {
   if (error) console.error(`Delete ${table}:`, error.message);
 };
 
-// \u2500\u2500 Sync-aware setter factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Sync-aware setter factory ─────────────────────────────────────────────────
 // Returns a wrapped setter that also persists every change to Supabase.
-// oldArr + newArr diff \u2192 upsert changed/added records, delete removed ones.
+// oldArr + newArr diff → upsert changed/added records, delete removed ones.
 const makeSyncedSetter = (db, table, setter) => (updater) => {
   setter(prev => {
     const next = typeof updater === "function" ? updater(prev) : updater;
-    if (!db) return next; // offline / not configured \u2014 just update state
+    if (!db) return next; // offline / not configured — just update state
     // Find added or changed records
     next.forEach(record => {
       const old = prev.find(p => p.id === record.id);
@@ -1720,15 +1720,15 @@ const makeSyncedSetter = (db, table, setter) => (updater) => {
   });
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 // CONNECTION STATUS BANNER
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
 const ConnBanner = ({ status }) => {
   const cfg = {
-    loading:  { bg:"#1e2438", color:"#8a9bbf",  icon:"\u27F3", text:"Connecting to database\u2026"          },
-    ok:       { bg:"#0d1f0d", color:"#10b981",   icon:"\u25CF", text:"Database connected \u2014 data is safe" },
-    error:    { bg:"#2d0a0a", color:"#ef4444",   icon:"\u26A0", text:"Database offline \u2014 working locally (data may not save)" },
-    notset:   { bg:"#1c1a07", color:"#f5a623",   icon:"\u2699", text:"Supabase not configured \u2014 set your URL & key in App.jsx (Section 2 of guide)" },
+    loading:  { bg:"#1e2438", color:"#8a9bbf",  icon:"⟳", text:"Connecting to database…"          },
+    ok:       { bg:"#0d1f0d", color:"#10b981",   icon:"●", text:"Database connected — data is safe" },
+    error:    { bg:"#2d0a0a", color:"#ef4444",   icon:"⚠", text:"Database offline — working locally (data may not save)" },
+    notset:   { bg:"#1c1a07", color:"#f5a623",   icon:"⚙", text:"Supabase not configured — set your URL & key in App.jsx (Section 2 of guide)" },
   };
   const c = cfg[status] || cfg.notset;
   return (
@@ -1739,24 +1739,24 @@ const ConnBanner = ({ status }) => {
   );
 };
 
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-// ROOT APP  \u2014 with Supabase sync
-// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// ════════════════════════════════════════════════════════════════════════════
+// ROOT APP  — with Supabase sync
+// ════════════════════════════════════════════════════════════════════════════
 const NAV = [
-  {id:"dashboard",  label:"Dashboard",       icon:"\uD83C\uDFE0", sec:"Overview"},
-  {id:"inventory",  label:"Inventory",        icon:"\uD83D\uDCE6", sec:"Warehouse"},
-  {id:"locations",  label:"Locations",        icon:"\uD83D\uDCCD", sec:"Warehouse"},
-  {id:"supplies",   label:"Supplies",         icon:"\uD83D\uDDC2\uFE0F", sec:"Warehouse"},
-  {id:"orders",     label:"Orders",           icon:"\uD83D\uDED2", sec:"Commerce"},
-  {id:"suppliers",  label:"Purchase Orders",  icon:"\uD83D\uDE9A", sec:"Commerce"},
-  {id:"fulfillment",label:"Fulfillment",      icon:"\u26A1", sec:"Operations"},
-  {id:"reports",    label:"Reports & Alerts", icon:"\uD83D\uDCCA", sec:"Analytics"},
+  {id:"dashboard",  label:"Dashboard",       icon:"🏠", sec:"Overview"},
+  {id:"inventory",  label:"Inventory",        icon:"📦", sec:"Warehouse"},
+  {id:"locations",  label:"Locations",        icon:"📍", sec:"Warehouse"},
+  {id:"supplies",   label:"Supplies",         icon:"🗂️", sec:"Warehouse"},
+  {id:"orders",     label:"Orders",           icon:"🛒", sec:"Commerce"},
+  {id:"suppliers",  label:"Purchase Orders",  icon:"🚚", sec:"Commerce"},
+  {id:"fulfillment",label:"Fulfillment",      icon:"⚡", sec:"Operations"},
+  {id:"reports",    label:"Reports & Alerts", icon:"📊", sec:"Analytics"},
 ];
 
 export default function App() {
   injectFont(); injectCSS();
 
-  // \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── State ──────────────────────────────────────────────────────────────────
   const [page,         setPage]         = useState("dashboard");
   const [inventory,    setInventory]    = useState([]);
   const [orders,       setOrders]       = useState([]);
@@ -1767,7 +1767,7 @@ export default function App() {
   const [db,           setDb]           = useState(null);
   const [dbStatus,     setDbStatus]     = useState("loading"); // loading | ok | error | notset
 
-  // \u2500\u2500 Boot: load Supabase + fetch all data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Boot: load Supabase + fetch all data ───────────────────────────────────
   useEffect(() => {
     if (SUPABASE_URL === "YOUR_SUPABASE_URL" || SUPABASE_ANON === "YOUR_SUPABASE_ANON_KEY") {
       setDbStatus("notset");
@@ -1799,7 +1799,7 @@ export default function App() {
     }).catch(() => setDbStatus("error"));
   }, []);
 
-  // \u2500\u2500 Synced setters \u2014 every change auto-saves to Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Synced setters — every change auto-saves to Supabase ──────────────────
   const syncInventory    = useMemo(() => db ? makeSyncedSetter(db, "inventory",    setInventory)    : setInventory,    [db]);
   const syncOrders       = useMemo(() => db ? makeSyncedSetter(db, "orders",       setOrders)       : setOrders,       [db]);
   const syncSuppliers    = useMemo(() => db ? makeSyncedSetter(db, "suppliers",    setSuppliers)    : setSuppliers,    [db]);
@@ -1807,7 +1807,7 @@ export default function App() {
   const syncFulfillments = useMemo(() => db ? makeSyncedSetter(db, "fulfillments", setFulfillments) : setFulfillments, [db]);
   const syncSupplies     = useMemo(() => db ? makeSyncedSetter(db, "supplies",     setSupplies)     : setSupplies,     [db]);
 
-  // \u2500\u2500 Derived counts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Derived counts ─────────────────────────────────────────────────────────
   const lowCount   = inventory.filter(i => !i.isPackaging && i.quantity <= LOW_STOCK).length;
   const lowSupplyCount = supplies.filter(s => (s.bundleQty*s.unitsPerBundle)-s.unitsUsed <= s.reorderPoint).length;
   const fillCount  = fulfillments.filter(f => f.status !== "Fulfilled").length;
@@ -1815,12 +1815,12 @@ export default function App() {
 
   const subs = {
     dashboard:   "Warehouse overview",
-    inventory:   `${inventory.filter(i=>!i.isPackaging).length} products \u00B7 ${inventory.filter(i=>i.isPackaging).length} packaging SKUs`,
+    inventory:   `${inventory.filter(i=>!i.isPackaging).length} products · ${inventory.filter(i=>i.isPackaging).length} packaging SKUs`,
     locations:   `${locations.length} locations`,
     orders:      `${orders.length} orders`,
     suppliers:   `${suppliers.length} purchase orders`,
     supplies:    `${supplies.length} supply types`,
-    fulfillment: `${fillCount} active \u00B7 ${readyCount} ready to ship`,
+    fulfillment: `${fillCount} active · ${readyCount} ready to ship`,
     reports:     "Stock health & analytics",
   };
 
@@ -1834,7 +1834,7 @@ export default function App() {
             <img src={LOGO_B64} alt="Khair Group" style={{width:44,height:44,objectFit:"contain",flexShrink:0}} />
             <div>
               <div style={{fontFamily:"var(--mono)",fontSize:11,fontWeight:700,color:"#e8e8e8",letterSpacing:"0.06em",lineHeight:1.2}}>KHAIR GROUP</div>
-              <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#c0392b",letterSpacing:"0.1em",marginTop:2,textTransform:"uppercase"}}>Warehouse \u00B7 WMS</div>
+              <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#c0392b",letterSpacing:"0.1em",marginTop:2,textTransform:"uppercase"}}>Warehouse · WMS</div>
             </div>
           </div>
         </div>
@@ -1846,7 +1846,7 @@ export default function App() {
                 <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
                 <span>{n.label}</span>
                 {n.id==="fulfillment"  && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
-                {n.id==="fulfillment"  && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}\uD83D\uDE80</span>}
+                {n.id==="fulfillment"  && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
               </div>
             ))}
           </div>
