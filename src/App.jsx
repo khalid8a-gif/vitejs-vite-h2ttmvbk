@@ -273,10 +273,15 @@ const Empty = ({icon,title,sub,action}) => (
 const defItem = () => ({
   id:genId(), sku:genSku(), name:"", description:"", condition:"New",
   quantity:0, reorderPoint:5, costPrice:0, sellPrice:0,
-  location:"", category:"", notes:"", platforms:[],
+  location:"", locationQty:[], category:"", notes:"", platforms:[],
   image:null, weight:0, dimL:0, dimW:0, dimH:0,
   isPackaging:false, pkgType:"", createdAt:today(),
 });
+const totalQty = (item) => {
+  if(item.locationQty && item.locationQty.length>0)
+    return item.locationQty.reduce((s,l)=>s+(l.qty||0),0);
+  return item.quantity||0;
+};
 
 const PlatSel = ({selected,onChange}) => (
   <div className="plat-grid">
@@ -401,7 +406,7 @@ const Inventory = ({inventory,setInventory,locations}) => {
 
       {filtered.length===0 ? <Empty icon="📦" title="No items" sub="Add your first inventory item" action={<button className="btn btn-p" onClick={()=>{setForm(defItem());setModal({mode:"add"})}}>+ Add Item</button>} /> : (
         <div className="tw"><table>
-          <thead><tr><th></th><th>SKU / Barcode</th><th>Product</th><th>Cond.</th><th>Platforms</th><th>Location</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Type</th><th>Actions</th></tr></thead>
+          <thead><tr><th></th><th>SKU / Barcode</th><th>Product</th><th>Cond.</th><th>Platforms</th><th>Stock by Location</th><th>Total</th><th>Cost</th><th>Sell</th><th>Type</th><th>Actions</th></tr></thead>
           <tbody>
             {filtered.map(item=>{
               const stc = sc(item.quantity,item.reorderPoint);
@@ -417,10 +422,23 @@ const Inventory = ({inventory,setInventory,locations}) => {
                   <td><div className="fw6" style={{fontSize:13}}>{item.name}</div>{item.category&&<div className="sm muted">{item.category}</div>}</td>
                   <td><Badge label={item.condition} color={SC[item.condition]||"#6b7280"} /></td>
                   <td><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{item.platforms.length===0?<span className="muted sm">—</span>:item.platforms.map(p=><span key={p} className="chip">{p}</span>)}</div></td>
-                  <td><span className="mono" style={{fontSize:12}}>{item.location||<span className="muted">—</span>}</span></td>
                   <td>
-                    <span className="mono fw6" style={{color:stc}}>{item.quantity}</span>
-                    <div className="sbar"><div className="sfill" style={{background:stc,width:`${Math.min((item.quantity/Math.max(item.reorderPoint*3,1))*100,100)}%`}} /></div>
+                    {item.locationQty&&item.locationQty.length>0 ? (
+                      <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                        {item.locationQty.map((lq,idx)=>(
+                          <div key={idx} style={{display:"flex",alignItems:"center",gap:5}}>
+                            <span style={{color:"var(--amber)",fontSize:10,fontFamily:"var(--mono)"}}>{"📍"+lq.location}</span>
+                            <span style={{fontFamily:"var(--mono)",fontSize:11,fontWeight:700,color:stc}}>{lq.qty}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="mono" style={{fontSize:12}}>{item.location||<span className="muted">—</span>}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="mono fw6" style={{color:stc}}>{totalQty(item)}</span>
+                    <div className="sbar"><div className="sfill" style={{background:stc,width:`${Math.min((totalQty(item)/Math.max(item.reorderPoint*3,1))*100,100)}%`}} /></div>
                   </td>
                   <td className="mono">${fmt(item.costPrice)}</td>
                   <td className="mono">${fmt(item.sellPrice)}</td>
@@ -550,7 +568,7 @@ const Orders = ({orders,setOrders,inventory,setFulfillments}) => {
                 {o.status==="Pending"&&!o.fulfillmentId&&<button className="btn btn-ok btn-xs" onClick={()=>sendFulfill(o)}>→ Fulfill</button>}
                 {o.fulfillmentId&&<Badge label="In Fulfillment" color="#8b5cf6" />}
                 <button className="btn btn-g btn-xs" onClick={()=>{setForm({...o});setOItems([...o.items]);setModal({mode:"edit"})}}>Edit</button>
-                <button className="btn btn-d btn-xs" onClick={()=>{if(confirm("Delete?"))setOrders(p=>p.filter(x=>x.id!==o.id))}}>Del</button>
+                <button className="btn btn-d btn-xs" onClick={()=>{if(confirm("Delete order? This will also remove it from Fulfillment.")){setOrders(p=>p.filter(x=>x.id!==o.id));setFulfillments(p=>p.filter(f=>f.id!==o.fulfillmentId))}}}>Del</button>
               </div></td>
             </tr>
           ))}</tbody>
@@ -1037,14 +1055,46 @@ const Fulfillment = ({fulfillments,setFulfillments,inventory,setOrders,supplies,
 // ════════════════════════════════════════════════════════════════════════════
 const defPO = () => ({id:genId(),poNumber:`PO-${Date.now().toString().slice(-6)}`,supplier:"",contactEmail:"",date:today(),expectedDate:"",status:"Draft",notes:"",items:[],total:0});
 
-const Suppliers = ({suppliers,setSuppliers,inventory}) => {
+const Suppliers = ({suppliers,setSuppliers,inventory,setInventory,locations}) => {
   const [q,setQ]=useState(""); const [modal,setModal]=useState(null);
   const [form,setForm]=useState(defPO()); const [pis,setPis]=useState([]);
   const [ss,setSs]=useState(""); const [sq,setSq]=useState(1); const [sp,setSp]=useState(0);
+  const [rcvModal,setRcvModal]=useState(null);
+  const [rcvLines,setRcvLines]=useState([]);
   const tot=(items)=>items.reduce((s,x)=>s+x.unitCost*x.qty,0);
   const addI=()=>{const inv=inventory.find(i=>i.sku===ss);if(!inv)return;setPis(p=>{const ex=p.find(x=>x.sku===ss);if(ex)return p.map(x=>x.sku===ss?{...x,qty:x.qty+sq}:x);return [...p,{sku:ss,name:inv.name,qty:sq,unitCost:sp}];});setSs("");setSq(1);setSp(0);};
   const save=()=>{if(!form.supplier.trim())return alert("Supplier required.");const po={...form,items:pis,total:tot(pis)};if(modal.mode==="add")setSuppliers(p=>[...p,{...po,id:genId()}]);else setSuppliers(p=>p.map(s=>s.id===form.id?po:s));setModal(null);setPis([]);};
   const filt=suppliers.filter(s=>!q||s.supplier.toLowerCase().includes(q.toLowerCase())||s.poNumber.toLowerCase().includes(q.toLowerCase()));
+
+  const openRcv = (po) => {
+    setRcvLines(po.items.map(i=>({sku:i.sku,name:i.name,ordered:i.qty,received:i.qty,loc:""})));
+    setRcvModal(po);
+  };
+
+  const doRcv = () => {
+    setInventory(prev=>{
+      let next=[...prev];
+      rcvLines.forEach(rl=>{
+        if(!rl.received||rl.received<=0) return;
+        const loc=rl.loc||"Unassigned";
+        const idx=next.findIndex(i=>i.sku===rl.sku);
+        if(idx===-1) return;
+        const item={...next[idx]};
+        const lqs=[...(item.locationQty||[])];
+        const li=lqs.findIndex(l=>l.location===loc);
+        if(li===-1) lqs.push({location:loc,qty:rl.received});
+        else lqs[li]={...lqs[li],qty:lqs[li].qty+rl.received};
+        item.locationQty=lqs;
+        item.quantity=lqs.reduce((s,l)=>s+(l.qty||0),0);
+        item.location=lqs[0]?.location||item.location;
+        next[idx]=item;
+      });
+      return next;
+    });
+    setSuppliers(p=>p.map(s=>s.id===rcvModal.id?{...s,status:"Received",receivedDate:today()}:s));
+    setRcvModal(null);
+  };
+
   return (
     <div>
       <div className="fb">
@@ -1061,6 +1111,9 @@ const Suppliers = ({suppliers,setSuppliers,inventory}) => {
               <td className="mono">{po.items.length}</td><td className="mono amber fw6">${fmt(po.total)}</td>
               <td><select className="sel" style={{width:"auto",padding:"3px 8px",fontSize:12}} value={po.status} onChange={(e)=>setSuppliers(p=>p.map(s=>s.id===po.id?{...s,status:e.target.value}:s))}>{SUPPLIER_STATUSES.map(s=><option key={s}>{s}</option>)}</select></td>
               <td><div className="flex gap8">
+                {(po.status==="Confirmed"||po.status==="Partial")&&(
+                  <button className="btn btn-g btn-xs" style={{color:"var(--green)"}} onClick={()=>openRcv(po)}>📥 Receive</button>
+                )}
                 <button className="btn btn-g btn-xs" onClick={()=>{setForm({...po});setPis([...po.items]);setModal({mode:"edit"})}}>Edit</button>
                 <button className="btn btn-d btn-xs" onClick={()=>{if(confirm("Delete?"))setSuppliers(p=>p.filter(s=>s.id!==po.id))}}>Del</button>
               </div></td>
@@ -1098,6 +1151,69 @@ const Suppliers = ({suppliers,setSuppliers,inventory}) => {
             <tr style={{background:"var(--s2)"}}><td colSpan={4} style={{textAlign:"right",fontWeight:700}}>Total</td><td className="mono fw6 amber">${fmt(tot(pis))}</td><td/></tr>
             </tbody></table></div>}
           <div className="fg"><label className="fl">Notes</label><textarea className="ta" value={form.notes} onChange={(e)=>setForm(p=>({...p,notes:e.target.value}))} /></div>
+        </Modal>
+      )}
+
+      {rcvModal && (
+        <Modal title={"Receive PO — "+rcvModal.poNumber} onClose={()=>setRcvModal(null)} size="mlg"
+          footer={
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button className="btn btn-g" onClick={()=>setRcvModal(null)}>Cancel</button>
+              <button className="btn btn-p" onClick={doRcv}>Confirm Receipt + Update Inventory</button>
+            </div>
+          }>
+          <div style={{background:"var(--s2)",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"var(--t3)"}}>
+            Supplier: <strong style={{color:"var(--t1)"}}>{rcvModal.supplier}</strong>
+            {" · PO: "}<span style={{fontFamily:"var(--mono)",color:"var(--amber)"}}>{rcvModal.poNumber}</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {rcvLines.map((rl,i)=>{
+              const locOpts=locations?locations.map(l=>l.name).filter(Boolean):[];
+              return (
+                <div key={rl.sku} style={{background:"var(--s3)",borderRadius:9,padding:"12px 14px",border:"1px solid var(--b1)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                    <BC value={rl.sku} h={24} small />
+                    <div>
+                      <div style={{fontWeight:700,fontSize:13}}>{rl.name}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--t3)"}}>{"Ordered: "+rl.ordered+" units"}</div>
+                    </div>
+                  </div>
+                  <div className="r2">
+                    <div className="fg">
+                      <label className="fl">Units Received</label>
+                      <input className="inp" type="number" min="0" value={rl.received}
+                        onChange={e=>setRcvLines(p=>p.map((x,j)=>j===i?{...x,received:+e.target.value}:x))} />
+                      {rl.received!==rl.ordered&&(
+                        <div style={{fontSize:10,color:"var(--amber)",marginTop:3,fontFamily:"var(--mono)"}}>
+                          {rl.received<rl.ordered?"Short receive":"Over receive"}
+                        </div>
+                      )}
+                    </div>
+                    <div className="fg">
+                      <label className="fl">Put-away Location</label>
+                      <input className="inp" value={rl.loc}
+                        onChange={e=>setRcvLines(p=>p.map((x,j)=>j===i?{...x,loc:e.target.value}:x))}
+                        placeholder="Type or select" style={{fontFamily:"var(--mono)"}} />
+                      {locOpts.length>0&&(
+                        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:6}}>
+                          {locOpts.map(loc=>(
+                            <button key={loc} className="btn btn-s"
+                              style={{fontSize:10,padding:"2px 8px",
+                                background:rl.loc===loc?"rgba(224,48,48,.2)":"var(--s2)",
+                                color:rl.loc===loc?"var(--amber)":"var(--t3)",
+                                border:rl.loc===loc?"1px solid rgba(224,48,48,.4)":"1px solid var(--b1)"}}
+                              onClick={()=>setRcvLines(p=>p.map((x,j)=>j===i?{...x,loc:loc}:x))}>
+                              {"📍 "+loc}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </Modal>
       )}
     </div>
