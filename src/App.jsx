@@ -654,14 +654,19 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
 
   // ── Step 1: Pick ──────────────────────────────────────────────────────────
   const onPickScan = function(sku) {
-    if(!f.items.find(function(i){ return i.sku===sku; })) return setE("SKU "+sku+" not in this order");
-    if(f.pickedSkus.includes(sku)) return setE(sku+" already picked");
+    var orderItem = f.items.find(function(i){ return i.sku===sku; });
+    if(!orderItem) return setE("SKU "+sku+" not in this order");
+    var required = orderItem.qty||1;
+    var pickedCount = f.pickedSkus.filter(function(s){ return s===sku; }).length;
+    if(pickedCount>=required) return setE(sku+" already fully picked ("+pickedCount+"/"+required+")");
     setPendingPickSku(sku);
   };
   const confirmPickLocation = function(sku, location) {
     var pickedLocs = Object.assign({}, f.pickedLocations||{}, {[sku]: location});
     var np = f.pickedSkus.concat([sku]);
-    var allDone = f.items.every(function(i){ return np.includes(i.sku); });
+    var allDone = f.items.every(function(i){
+      return np.filter(function(s){ return s===i.sku; }).length >= (i.qty||1);
+    });
     upd({pickedSkus:np, pickedLocations:pickedLocs, status:allDone?"Packing":"Picking"});
     if(setInventory) setInventory(function(prev){
       return prev.map(function(item){
@@ -758,7 +763,9 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
               <div style={{marginBottom:14}}>
                 {f.items.map(function(oi){
                   var inv=products.find(function(p){ return p.sku===oi.sku; });
-                  var picked=f.pickedSkus.includes(oi.sku);
+                  var required=oi.qty||1;
+                  var pickedCount=f.pickedSkus.filter(function(s){ return s===oi.sku; }).length;
+                  var picked=pickedCount>=required;
                   var pickedLoc=f.pickedLocations&&f.pickedLocations[oi.sku];
                   return (
                     <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid var(--b1)"}}>
@@ -766,7 +773,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                       <BC value={oi.sku} h={22} small />
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,color:picked?"var(--green)":"var(--t1)",fontWeight:picked?700:400}}>{oi.name}</div>
-                        <div className="sm muted mono">{oi.sku}{oi.qty>1?" · qty: "+oi.qty:""}</div>
+                        <div className="sm muted mono">{oi.sku}{required>1?" · "+pickedCount+"/"+required+" picked":""}</div>
                       </div>
                       {pickedLoc && <span style={{background:"var(--adim)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:10,padding:"2px 7px",borderRadius:5}}>{"📍 "+pickedLoc}</span>}
                       {!pickedLoc && inv && inv.locationQty && inv.locationQty.length>0 && (
@@ -994,7 +1001,7 @@ const Fulfillment = ({fulfillments,setFulfillments,inventory,locations,setInvent
       </div>
       {shown.length===0
         ?<Empty icon="📬" title="Nothing here" sub={tab==="active"?"Send orders to fulfillment from Orders tab":tab==="ready"?"No packages ready yet":"Fulfilled orders appear here"} />
-        :shown.map(f=><FCard key={f.id} f={f} inventory={inventory} setFulfillments={setFulfillments} setOrders={setOrders} />)
+        :shown.map(f=><FCard key={f.id} f={f} inventory={inventory} locations={locations} setInventory={setInventory} setFulfillments={setFulfillments} setOrders={setOrders} supplies={supplies} setSupplies={setSupplies} />)
       }
     </div>
   );
