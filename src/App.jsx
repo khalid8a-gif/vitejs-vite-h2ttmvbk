@@ -645,33 +645,24 @@ const Pipeline = ({status}) => {
 const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,supplies,setSupplies}) => {
   const [open,setOpen]=useState(false);
   const [err,setErr]=useState("");
-  const [pendingPickSku,setPendingPickSku]=useState(null);
+  // step states
+  const [pendingPickSku,setPendingPickSku]=useState(null); // waiting for location confirm
+  const [labelInput,setLabelInput]=useState("");
   const setE = (msg) => { setErr(msg); setTimeout(()=>setErr(""),3500); };
   const upd = (patch) => setFulfillments(p=>p.map(x=>x.id===f.id?{...x,...patch}:x));
-  const products = useMemo(()=>inventory.filter(i=>!i.isPackaging),[inventory]);
-  const packaging = useMemo(()=>(supplies||[]).filter(s=>supAvail(s)>0),[supplies]);
+  const products = useMemo(()=>inventory.filter(function(i){ return !i.isPackaging; }),[inventory]);
 
-  const sugPkg = useMemo(()=>{
-    const its=f.items.map(oi=>products.find(p=>p.sku===oi.sku)).filter(Boolean);
-    const mL=Math.max(...its.map(i=>i.dimL||0),0), mW=Math.max(...its.map(i=>i.dimW||0),0), mH=Math.max(...its.map(i=>i.dimH||0),0);
-    const wt=its.reduce((s,i)=>s+(i.weight||0),0), vol=mL*mW*mH;
-    if(vol===0) return null;
-    if(wt<0.5&&mL<35&&mW<25) return "Bubble Mailer";
-    if(wt<1&&mL<40&&mW<30) return "Padded Envelope";
-    if(vol<5000) return "Poly Mailer";
-    return "Box";
-  },[f.items,products]);
-
+  // ── Step 1: Pick ──────────────────────────────────────────────────────────
   const onPickScan = function(sku) {
     if(!f.items.find(function(i){ return i.sku===sku; })) return setE("SKU "+sku+" not in this order");
-    if(f.pickedSkus.includes(sku)) return setE(sku+" already scanned");
+    if(f.pickedSkus.includes(sku)) return setE(sku+" already picked");
     setPendingPickSku(sku);
   };
   const confirmPickLocation = function(sku, location) {
     var pickedLocs = Object.assign({}, f.pickedLocations||{}, {[sku]: location});
     var np = f.pickedSkus.concat([sku]);
-    upd({pickedSkus:np, pickedLocations:pickedLocs,
-      status:f.items.every(function(i){ return np.includes(i.sku); })?"Packing":"Picking"});
+    var allDone = f.items.every(function(i){ return np.includes(i.sku); });
+    upd({pickedSkus:np, pickedLocations:pickedLocs, status:allDone?"Packing":"Picking"});
     if(setInventory) setInventory(function(prev){
       return prev.map(function(item){
         if(item.sku!==sku) return item;
@@ -683,63 +674,61 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
     });
     setPendingPickSku(null);
   };
-  const onPackScan = function(sku) {
-    var orderItem = f.items.find(function(i){ return i.sku===sku; });
-    if(!orderItem) return setE("SKU "+sku+" not in this order");
-    var required = orderItem.qty||1;
-    var scannedCount = f.packedSkus.filter(function(s){ return s===sku; }).length;
-    if(scannedCount>=required) return setE(sku+" fully packed ("+required+"/"+required+")");
-    var np = f.packedSkus.concat([sku]);
-    var allPacked = f.items.every(function(oi){
-      return np.filter(function(s){ return s===oi.sku; }).length >= (oi.qty||1);
-    });
-    upd({packedSkus:np, status:allPacked?"Packaging":"Packing"});
-  };
-  const onPkgScan = function(sku) {
-    var sup=supplies.find(function(s){ return s.sku===sku; });
-    if(!sup) return setE("SKU "+sku+" not found in supplies");
-    confirmSupplyUse(sup);
-  };
 
-  const confirmSupplyUse = function(sup) {
+  // ── Step 2: Packaging ─────────────────────────────────────────────────────
+  const confirmPackaging = function(sup) {
     var avail=supAvail(sup);
     if(avail<=0) return setE(sup.name+" is out of stock!");
-    upd({packaging:sup.sku,packagingName:sup.name,supplyUsed:sup.id});
+    upd({packaging:sup.sku, packagingName:sup.name, supplyUsed:sup.id});
+  };
+  const onPkgScan = function(sku) {
+    var sup=(supplies||[]).find(function(s){ return s.sku===sku; });
+    if(!sup) return setE("SKU "+sku+" not found in supplies");
+    confirmPackaging(sup);
   };
 
-  const deductSupply = (supId) => {
-    if(!supId||!setSupplies) return;
-    setSupplies(p=>p.map(s=>{
-      if(s.id!==supId) return s;
-      const entry={date:today(),type:"used",unitsUsed:1,orderRef:f.orderRef};
-      return {...s,unitsUsed:s.unitsUsed+1,history:[entry,...(s.history||[])]};
-    }));
-  };
+  // ── Step 3: Dimensions ────────────────────────────────────────────────────
+  const allPacked = f.packaging && f.packageWeight>0;
 
-  const allPacked = f.items.every(i=>f.packedSkus.includes(i.sku));
-  const canReady = allPacked && f.packaging && f.packageWeight>0;
-
-  const markReady = () => {
+  const confirmPackage = function() {
+    if(!f.packaging)  return setE("Select packaging first");
+    if(!f.packageWeight) return setE("Enter package weight");
+    // deduct supply
+    if(f.supplyUsed && setSupplies) {
+      setSupplies(function(p){ return p.map(function(s){
+        if(s.id!==f.supplyUsed) return s;
+        var entry={date:today(),type:"used",unitsUsed:1,orderRef:f.orderRef};
+        return Object.assign({},s,{unitsUsed:s.unitsUsed+1,history:[entry,...(s.history||[])]});
+      }); });
+    }
     upd({status:"Ready to Ship"});
-    setOrders(p=>p.map(o=>o.fulfillmentId===f.id?{...o,status:"Packed"}:o));
-    if(f.supplyUsed) deductSupply(f.supplyUsed);
-  };
-  const onLabelScan = (val) => {
-    upd({labelTrackingNumber:val,status:"Label Assigned"});
-    setOrders(p=>p.map(o=>o.fulfillmentId===f.id?{...o,trackingNumber:val,status:"Shipped"}:o));
-  };
-  const onVerify = (val) => {
-    if(val===f.labelTrackingNumber) {
-      upd({labelScanned:true,status:"Fulfilled"});
-      setOrders(p=>p.map(o=>o.fulfillmentId===f.id?{...o,status:"Delivered"}:o));
-    } else setE(`Mismatch! Expected: ${f.labelTrackingNumber}`);
+    setOrders(function(p){ return p.map(function(o){ return o.fulfillmentId===f.id?Object.assign({},o,{status:"Packed"}):o; }); });
   };
 
-  const s=f.status;
-  const inPacking = s==="Packing"||s==="Ready to Ship"||s==="Label Assigned"||s==="Fulfilled";
+  // ── Step 4: Label ─────────────────────────────────────────────────────────
+  const confirmLabel = function(val) {
+    var tracking = val || labelInput;
+    if(!tracking.trim()) return setE("Enter or scan a tracking number");
+    if(f.labelTrackingNumber && tracking.trim()!==f.labelTrackingNumber) {
+      return setE("Mismatch! Expected: "+f.labelTrackingNumber);
+    }
+    upd({labelTrackingNumber:tracking.trim(), labelScanned:true, status:"Fulfilled"});
+    setOrders(function(p){ return p.map(function(o){
+      return o.fulfillmentId===f.id ? Object.assign({},o,{status:"Delivered",trackingNumber:tracking.trim()}) : o;
+    }); });
+  };
+
+  const s = f.status;
+  const isPicking   = s==="Awaiting Picking" || s==="Picking";
+  const isPacking   = s==="Packing";
+  const isReady     = s==="Ready to Ship" || s==="Label Assigned";
+  const isDone      = s==="Fulfilled";
+  const pastPick    = !isPicking;
+  const pastPack    = isPacking||isReady||isDone;
+  const pastDims    = isReady||isDone;
 
   return (
-    <div className={`fcard ${open?"open":""}`} style={{borderColor:open?SC[s]+"55":"var(--b1)"}}>
+    <div className={"fcard "+(open?"open":"")} style={{borderColor:open?SC[s]+"55":"var(--b1)"}}>
       <div className="fch" onClick={()=>setOpen(x=>!x)}>
         <div style={{fontSize:18}}>{open?"▾":"▸"}</div>
         <div>
@@ -758,53 +747,46 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
         <div className="fcb">
           <Pipeline status={s} />
 
-          {/* Items table */}
-          <div className="card mb16">
-            <div className="ch"><span className="ct">📦 Order Items & Locations</span></div>
-            <table>
-              <thead><tr><th>Barcode / SKU</th><th>Product</th><th>Condition</th><th>Location</th><th>Qty</th><th>Picked</th><th>Packed</th></tr></thead>
-              <tbody>
-                {f.items.map(oi=>{
-                  const inv=products.find(p=>p.sku===oi.sku);
-                  const picked=f.pickedSkus.includes(oi.sku), packed=f.packedSkus.includes(oi.sku);
+          {/* ── STEP 1: PICK ─────────────────────────────────────────── */}
+          <div className="card mb16" style={{borderColor:isPicking?"var(--amber)":"var(--b1)"}}>
+            <div className="ch">
+              <span className="ct">{pastPick?"✅":"🔍"} Step 1 — Pick Items</span>
+              <span className="sm muted mono">{f.pickedSkus.length}/{f.items.length} picked</span>
+            </div>
+            <div className="cb">
+              {/* Item checklist */}
+              <div style={{marginBottom:14}}>
+                {f.items.map(function(oi){
+                  var inv=products.find(function(p){ return p.sku===oi.sku; });
+                  var picked=f.pickedSkus.includes(oi.sku);
+                  var pickedLoc=f.pickedLocations&&f.pickedLocations[oi.sku];
                   return (
-                    <tr key={oi.sku}>
-                      <td>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          {inv&&inv.image&&<img src={inv.image} style={{width:30,height:30,objectFit:"cover",borderRadius:5,border:"1px solid var(--b1)"}} />}
-                          <BC value={oi.sku} h={24} small />
-                        </div>
-                      </td>
-                      <td><div className="fw6">{oi.name}</div></td>
-                      <td><Badge label={oi.condition} color={SC[oi.condition]||"#6b7280"} /></td>
-                      <td>{inv&&inv.location
-                        ?<span style={{background:"var(--adim)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:11,padding:"2px 8px",borderRadius:5,border:"1px solid rgba(245,166,35,.28)"}}>📍 {inv.location}</span>
-                        :<span className="muted sm">No location set</span>}</td>
-                      <td className="mono">{oi.qty}</td>
-                      <td>{picked?<span className="green fw6">✓</span>:<span className="muted">—</span>}</td>
-                      <td>{packed?<span className="green fw6">✓</span>:<span className="muted">—</span>}</td>
-                    </tr>
+                    <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid var(--b1)"}}>
+                      <span style={{fontSize:16,width:20}}>{picked?"✅":"⬜"}</span>
+                      <BC value={oi.sku} h={22} small />
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,color:picked?"var(--green)":"var(--t1)",fontWeight:picked?700:400}}>{oi.name}</div>
+                        <div className="sm muted mono">{oi.sku}{oi.qty>1?" · qty: "+oi.qty:""}</div>
+                      </div>
+                      {pickedLoc && <span style={{background:"var(--adim)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:10,padding:"2px 7px",borderRadius:5}}>{"📍 "+pickedLoc}</span>}
+                      {!pickedLoc && inv && inv.locationQty && inv.locationQty.length>0 && (
+                        <span style={{color:"var(--t3)",fontFamily:"var(--mono)",fontSize:10}}>
+                          {inv.locationQty.map(function(lq){ return "📍"+lq.location+"·"+lq.qty; }).join(" ")}
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Step 1: Pick */}
-          {(s==="Awaiting Picking"||s==="Picking") && (
-            <div className="card mb16">
-              <div className="ch">
-                <span className="ct">🔍 Step 1 — Pick Items</span>
-                <span className="sm muted mono">{f.pickedSkus.length}/{f.items.length} scanned</span>
               </div>
-              <div className="cb">
-                {pendingPickSku ? (
+
+              {isPicking && (
+                pendingPickSku ? (
                   <div style={{background:"var(--s2)",borderRadius:10,padding:"14px",border:"1px solid var(--amber)"}}>
-                    <div style={{color:"var(--amber)",fontWeight:700,marginBottom:8,fontFamily:"var(--mono)",fontSize:13}}>
-                      {"📍 Confirm location for: "+pendingPickSku}
+                    <div style={{color:"var(--amber)",fontWeight:700,marginBottom:6,fontFamily:"var(--mono)",fontSize:13}}>
+                      {"📍 Confirm pick location for: "+pendingPickSku}
                     </div>
-                    <div style={{fontSize:12,color:"var(--t2)",marginBottom:10}}>Select or scan shelf location</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    <div className="sm muted mb8">Select shelf location or scan shelf barcode</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
                       {(locations||[]).map(function(loc){
                         var inv2=products.find(function(p){ return p.sku===pendingPickSku; });
                         var lqMatch=inv2&&inv2.locationQty&&inv2.locationQty.find(function(l){ return l.location===loc.name; });
@@ -819,245 +801,170 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                       })}
                     </div>
                     <ScanIn label="Or scan shelf barcode" onScan={function(loc){ confirmPickLocation(pendingPickSku, loc); }} />
-                    <button className="btn btn-s" style={{marginTop:10,color:"var(--t3)"}}
-                      onClick={function(){ setPendingPickSku(null); }}>Cancel</button>
+                    <button className="btn btn-s" style={{marginTop:8,color:"var(--t3)"}} onClick={function(){ setPendingPickSku(null); }}>✕ Cancel</button>
                   </div>
                 ) : (
                   <ScanIn label="Scan product SKU barcode to pick" onScan={onPickScan} />
-                )}
-                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
-                <div className="mt12">
-                  {f.items.map(oi=>{
-                    const done=f.pickedSkus.includes(oi.sku);
-                    const inv=products.find(p=>p.sku===oi.sku);
-                    return (
-                      <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid var(--b1)"}}>
-                        <span style={{fontSize:15}}>{done?"✅":"⬜"}</span>
-                        <BC value={oi.sku} h={20} small />
-                        <span style={{fontSize:13,color:done?"var(--green)":"var(--t2)"}}>{oi.name}</span>
-                        {inv&&inv.location&&<span style={{marginLeft:"auto",color:"var(--amber)",fontSize:11,fontFamily:"var(--mono)"}}>📍 {inv.location}</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                )
+              )}
+              {err&&isPicking&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
             </div>
-          )}
+          </div>
 
-          {/* Step 2: Packaging */}
-          {inPacking && (
-            <div className="card mb16">
+          {/* ── STEP 2: PACKAGING ────────────────────────────────────── */}
+          {pastPick && (
+            <div className="card mb16" style={{borderColor:isPacking&&!f.packaging?"var(--amber)":"var(--b1)"}}>
               <div className="ch">
-                <span className="ct">📦 Step 2 — Select Packaging</span>
-                {f.packaging&&<Badge label="✓ Confirmed" color="#10b981" />}
+                <span className="ct">{f.packaging?"✅":"📦"} Step 2 — Select Packaging</span>
+                {f.packaging && <span className="sm muted mono">{f.packagingName}</span>}
               </div>
               <div className="cb">
-                {sugPkg&&!f.packaging&&(
-                  <div style={{background:"var(--adim)",border:"1px solid rgba(245,166,35,.22)",borderRadius:8,padding:"9px 13px",marginBottom:13}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"var(--amber)",marginBottom:3}}>💡 SUGGESTED PACKAGING</div>
-                    <div style={{fontSize:14,fontWeight:600}}>{(PKG_TYPES.find(p=>p.type===sugPkg)||{}).icon} {sugPkg}</div>
-                    <div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>Based on product dimensions & weight</div>
-                  </div>
-                )}
-                {packaging.length>0 ? (
+                {!f.packaging ? (
                   <>
-                    <div className="fl" style={{marginBottom:9}}>Available Packaging — Click or scan to confirm</div>
-                    <div className="pkg-grid mb12">
-                      {packaging.map(function(pkg){
-                        var supType=(SUPPLY_TYPES.find(function(t){ return t.type===pkg.type; })||{});
-                        var avail=supAvail(pkg);
-                        return (
-                          <div key={pkg.sku} className={"pko "+(f.packaging===pkg.sku?"sel":"")}
-                            onClick={function(){ confirmSupplyUse(pkg); }}>
-                            <div className="pko-icon">{supType.icon||"📦"}</div>
-                            <div className="pko-name">{pkg.name}</div>
-                            <div className="pko-dims">{pkg.sku}</div>
-                            <div className="pko-dims" style={{color:"var(--green)"}}>{avail+" available"}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <ScanIn label="Or scan packaging barcode" onScan={onPkgScan} confirmed={!!f.packaging} okText={f.packagingName} />
-                    <div style={{marginTop:10}}>
-                      <button className="btn btn-s w100" style={{background:f.packaging==="SHIP-AS-IS"?"rgba(16,185,129,.15)":"var(--s2)",color:f.packaging==="SHIP-AS-IS"?"var(--green)":"var(--t2)",border:f.packaging==="SHIP-AS-IS"?"1px solid rgba(16,185,129,.3)":"1px solid var(--b1)"}}
-                        onClick={()=>upd({packaging:"SHIP-AS-IS",packagingName:"Ship as-is (original packaging)",supplyUsed:null})}>
-                        {f.packaging==="SHIP-AS-IS"?"✓ ":""} 📫 Ship as-is (original packaging)
-                      </button>
-                    </div>
-                    {/* Supplies from Supplies section */}
-                    {supplies && supplies.length>0 && (
-                      <div style={{marginTop:12}}>
-                        <div className="fl mb8" style={{color:"var(--amber)"}}>🗂️ Packing Supplies</div>
-                        <div className="pkg-grid">
-                          {supplies.map(sup=>{
-                            const avail=(sup.bundleQty*sup.unitsPerBundle)-sup.unitsUsed;
-                            const sel=f.packaging===sup.sku;
+                    {(supplies||[]).filter(function(s){ return supAvail(s)>0; }).length>0 ? (
+                      <>
+                        <div className="fl mb8">Pick from supplies or scan barcode</div>
+                        <div className="pkg-grid mb12">
+                          {(supplies||[]).map(function(sup){
+                            var avail=supAvail(sup);
+                            if(avail<=0) return null;
+                            var supType=(SUPPLY_TYPES.find(function(t){ return t.type===sup.type; })||{});
                             return (
-                              <div key={sup.id} className={`pko ${sel?"sel":""} ${avail<=0?"disabled":""}`}
-                                onClick={()=>avail>0&&confirmSupplyUse(sup)}
-                                style={{opacity:avail<=0 ? 0.45:1,cursor:avail<=0?"not-allowed":"pointer"}}>
-                                <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"📦"}</div>
+                              <div key={sup.id} className="pko"
+                                onClick={function(){ confirmPackaging(sup); }}>
+                                <div className="pko-icon">{supType.icon||"📦"}</div>
                                 <div className="pko-name">{sup.name}</div>
-                                <div className="pko-dims" style={{color:avail<=sup.reorderPoint?"var(--red)":"var(--t3)"}}>
-                                  {avail<=0?"OUT OF STOCK":avail+" left"}
-                                </div>
+                                <div className="pko-dims mono">{sup.sku}</div>
+                                <div className="pko-dims" style={{color:"var(--green)"}}>{avail+" available"}</div>
                               </div>
                             );
                           })}
                         </div>
-                      </div>
+                        <ScanIn label="Or scan supply barcode" onScan={onPkgScan} />
+                      </>
+                    ) : (
+                      <div className="muted sm mb10">No supplies in stock. Add supplies in the Supplies tab.</div>
                     )}
+                    <button className="btn btn-s w100" style={{marginTop:8,color:"var(--t2)"}}
+                      onClick={function(){ upd({packaging:"SHIP-AS-IS",packagingName:"Ship as-is",supplyUsed:null}); }}>
+                      📫 Ship as-is (no packaging needed)
+                    </button>
                   </>
-                ) : supplies && supplies.length>0 ? (
-                  <div>
-                    <div className="fl mb8">🗂️ Select from Packing Supplies</div>
-                    <div className="pkg-grid mb12">
-                      {supplies.map(sup=>{
-                        const avail=(sup.bundleQty*sup.unitsPerBundle)-sup.unitsUsed;
-                        const sel=f.packaging===sup.sku;
-                        return (
-                          <div key={sup.id} className={`pko ${sel?"sel":""}`}
-                            onClick={()=>avail>0&&confirmSupplyUse(sup)}
-                            style={{opacity:avail<=0 ? 0.45:1,cursor:avail<=0?"not-allowed":"pointer"}}>
-                            <div className="pko-icon">{(SUPPLY_TYPES.find(t=>t.type===sup.type)||{}).icon||"📦"}</div>
-                            <div className="pko-name">{sup.name}</div>
-                            <div className="pko-dims" style={{color:avail<=sup.reorderPoint?"var(--red)":"var(--t3)"}}>{avail<=0?"OUT OF STOCK":avail+" left"}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <ScanIn label="Or scan supply barcode" onScan={onPkgScan} confirmed={!!f.packaging} okText={f.packagingName} />
-                    <div style={{marginTop:10}}>
-                      <button className="btn btn-s w100" style={{background:f.packaging==="SHIP-AS-IS"?"rgba(16,185,129,.15)":"var(--s2)",color:f.packaging==="SHIP-AS-IS"?"var(--green)":"var(--t2)"}}
-                        onClick={()=>upd({packaging:"SHIP-AS-IS",packagingName:"Ship as-is (original packaging)",supplyUsed:null})}>
-                        {f.packaging==="SHIP-AS-IS"?"✓ ":""} 📫 Ship as-is (original packaging)
-                      </button>
-                    </div>
-                  </div>
                 ) : (
-                  <div className="muted sm">No packaging supplies available. Add supplies in the Supplies tab.</div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:22}}>✅</span>
+                    <div>
+                      <div style={{fontWeight:700}}>{f.packagingName}</div>
+                      <div className="sm muted">Packaging confirmed</div>
+                    </div>
+                    {isPacking && <button className="btn btn-s" style={{marginLeft:"auto",fontSize:11}} onClick={function(){ upd({packaging:null,packagingName:"",supplyUsed:null}); }}>Change</button>}
+                  </div>
                 )}
+                {err&&isPacking&&!f.packaging&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
               </div>
             </div>
           )}
 
-          {/* Step 2b: Pack items */}
-          {inPacking && (
-            <div className="card mb16">
+          {/* ── STEP 3: DIMENSIONS & CONFIRM ─────────────────────────── */}
+          {pastPick && (
+            <div className="card mb16" style={{borderColor:isPacking&&f.packaging&&!f.packageWeight?"var(--amber)":"var(--b1)"}}>
               <div className="ch">
-                <span className="ct">✅ Step 2b — Scan Items Into Package</span>
-                <span className="sm muted mono">{f.packedSkus.length}/{f.items.length} packed</span>
+                <span className="ct">{pastDims?"✅":"📐"} Step 3 — Weight & Dimensions</span>
+                {pastDims && <span className="sm muted mono">{f.packageL+"×"+f.packageW+"×"+f.packageH+" in · "+f.packageWeight+" lbs"}</span>}
               </div>
               <div className="cb">
-                <ScanIn label="Scan each item as it goes into the package" onScan={onPackScan} />
-                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
-                <div className="mt12">
-                  {f.items.map(oi=>{
-                    const done=f.packedSkus.includes(oi.sku);
+                <div className="r4">
+                  {[["L (in)","packageL"],["W (in)","packageW"],["H (in)","packageH"],["Weight (lbs)","packageWeight"]].map(function(pair){
+                    var lbl=pair[0], k=pair[1];
                     return (
-                      <div key={oi.sku} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid var(--b1)"}}>
-                        <span style={{fontSize:15}}>{done?"✅":"⬜"}</span>
-                        <BC value={oi.sku} h={20} small />
-                        <span style={{fontSize:13,color:done?"var(--green)":"var(--t2)"}}>{oi.name}</span>
+                      <div className="fg" key={k}>
+                        <label className="fl">{lbl}</label>
+                        <input className="inp" type="number" min="0" step="0.1" value={f[k]||""}
+                          onChange={function(e){ upd({[k]:+e.target.value}); }}
+                          readOnly={pastDims} />
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Dimensions */}
-          {inPacking && (
-            <div className="card mb16">
-              <div className="ch"><span className="ct">📐 Package Dimensions & Weight</span></div>
-              <div className="cb">
-                <div className="r4">
-                  {[["L (in)","packageL"],["W (in)","packageW"],["H (in)","packageH"],["Weight (lbs)","packageWeight"]].map(([lbl,k])=>(
-                    <div className="fg" key={k}><label className="fl">{lbl}</label>
-                      <input className="inp" type="number" min="0" step="0.1" value={f[k]||""} onChange={(e)=>upd({[k]:+e.target.value})} />
-                    </div>
-                  ))}
-                </div>
-                {s==="Packing" && (
+                {isPacking && (
                   <>
-                    <button className="btn btn-p w100" disabled={!canReady} onClick={markReady} style={{marginTop:4}}>🚀 Mark Ready to Ship</button>
-                    {!canReady && (
-                      <div style={{color:"var(--t3)",fontSize:11,marginTop:5,fontFamily:"var(--mono)"}}>
-                        {!allPacked&&"· Pack all items  "}{!f.packaging&&"· Select packaging  "}{!f.packageWeight&&"· Enter weight"}
+                    <button className="btn btn-p w100" style={{marginTop:12}}
+                      disabled={!f.packaging||!f.packageWeight}
+                      onClick={confirmPackage}>
+                      🚀 Confirm Package & Mark Ready to Ship
+                    </button>
+                    {(!f.packaging||!f.packageWeight) && (
+                      <div className="sm muted" style={{marginTop:5,fontFamily:"var(--mono)"}}>
+                        {!f.packaging?"· Select packaging above  ":""}{!f.packageWeight?"· Enter weight":""}
                       </div>
                     )}
+                    {err&&isPacking&&(f.packaging||f.packageWeight)&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
                   </>
                 )}
               </div>
             </div>
           )}
 
-          {/* Ready to Ship / Label / Fulfilled */}
-          {(s==="Ready to Ship"||s==="Label Assigned"||s==="Fulfilled") && (
-            <div className={`scard ${s==="Ready to Ship"?"ready":s==="Label Assigned"?"labeled":"done"}`}>
-              <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:13}}>
-                <div style={{fontSize:22}}>{s==="Fulfilled"?"✅":s==="Label Assigned"?"🏷":"🚀"}</div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:15}}>{s==="Fulfilled"?"Fully Fulfilled":s==="Label Assigned"?"Label Assigned":"Ready to Ship"}</div>
-                  <div className="sm muted">{f.orderRef} · {f.customerName}</div>
-                </div>
-                <div style={{marginLeft:"auto"}}><Badge label={s} color={SC[s]} /></div>
+          {/* ── STEP 4: LABEL ────────────────────────────────────────── */}
+          {isReady && (
+            <div className="card mb16" style={{borderColor:"var(--amber)"}}>
+              <div className="ch">
+                <span className="ct">🏷 Step 4 — Assign Shipping Label</span>
               </div>
+              <div className="cb">
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:14}}>
+                  {[["Packaging",f.packagingName||"—"],["Dimensions",f.packageL+"×"+f.packageW+"×"+f.packageH+" in"],["Weight",f.packageWeight+" lbs"],["Ship To",f.shippingAddress||"—"]].map(function(pair){
+                    return (
+                      <div key={pair[0]} style={{background:"var(--s2)",borderRadius:7,padding:"8px 11px"}}>
+                        <div className="sm muted">{pair[0]}</div>
+                        <div style={{fontFamily:"var(--mono)",fontSize:12,marginTop:2}}>{pair[1]}</div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:13}}>
-                {[["Package",`${f.packageL}×${f.packageW}×${f.packageH} in`],["Weight",`${f.packageWeight} lbs`],["Packaging",f.packagingName||f.packaging||"—"],["Ship To",f.shippingAddress||"—"]].map(([k,v])=>(
-                  <div key={k} style={{background:"var(--s2)",borderRadius:7,padding:"8px 11px"}}>
-                    <div className="sm muted">{k}</div>
-                    <div style={{fontFamily:"var(--mono)",fontSize:12,marginTop:2}}>{v}</div>
+                {f.labelTrackingNumber ? (
+                  <div style={{background:"rgba(16,185,129,.07)",border:"1px solid rgba(16,185,129,.22)",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+                    <div style={{fontSize:11,color:"var(--green)",fontWeight:700,marginBottom:3}}>🏷 LABEL PRE-ASSIGNED</div>
+                    <div style={{fontFamily:"var(--mono)",fontSize:14,marginBottom:4}}>{f.labelTrackingNumber}</div>
+                    <div className="sm muted">Scan the label barcode to verify and mark as shipped.</div>
                   </div>
-                ))}
+                ) : (
+                  <div style={{background:"rgba(59,130,246,.07)",border:"1px solid rgba(59,130,246,.18)",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+                    <div style={{fontSize:11,color:"#60a5fa",fontWeight:700,marginBottom:3}}>📋 NO LABEL YET</div>
+                    <div className="sm muted">Generate a label in your carrier system, then scan or type the tracking number below.</div>
+                  </div>
+                )}
+
+                <ScanIn label={f.labelTrackingNumber?"Scan label to verify":"Scan label barcode"} onScan={confirmLabel} />
+                <div style={{display:"flex",gap:8,marginTop:8}}>
+                  <input className="inp" value={labelInput} onChange={function(e){ setLabelInput(e.target.value); }}
+                    placeholder="Or type tracking number..." style={{fontFamily:"var(--mono)"}} />
+                  <button className="btn btn-p" onClick={function(){ confirmLabel(labelInput); }}>Confirm</button>
+                </div>
+                {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
               </div>
-
-              {s==="Ready to Ship" && (
-                <div>
-                  {f.labelTrackingNumber ? (
-                    <div style={{background:"rgba(16,185,129,.07)",border:"1px solid rgba(16,185,129,.22)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                      <div style={{fontSize:11,color:"var(--green)",fontWeight:700,marginBottom:3}}>🏷 LABEL PRE-ASSIGNED</div>
-                      <div style={{fontFamily:"var(--mono)",fontSize:13,marginBottom:4}}>{f.labelTrackingNumber}</div>
-                      <div style={{fontSize:11,color:"var(--t3)"}}>Label was set on the order. Scan below to verify and mark as shipped.</div>
-                    </div>
-                  ) : (
-                    <div style={{background:"rgba(59,130,246,.07)",border:"1px solid rgba(59,130,246,.18)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                      <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:3}}>📋 NEXT STEP</div>
-                      <div style={{fontSize:12,color:"var(--t2)"}}>Generate your shipping label in your external carrier system, then scan or type the tracking number below to assign it.</div>
-                    </div>
-                  )}
-                  <ScanIn label="Scan tracking number to confirm label" placeholder="Scan tracking barcode → Enter" onScan={onLabelScan} />
-                </div>
-              )}
-
-              {s==="Label Assigned" && (
-                <div>
-                  <div style={{background:"rgba(6,182,212,.07)",border:"1px solid rgba(6,182,212,.22)",borderRadius:8,padding:"9px 13px",marginBottom:11}}>
-                    <div style={{fontSize:11,color:"var(--cyan)",fontWeight:700,marginBottom:3}}>🏷 LABEL ASSIGNED</div>
-                    <div style={{fontFamily:"var(--mono)",fontSize:13}}>{f.labelTrackingNumber}</div>
-                    <div className="sm muted mt4">Now scan the label one more time to verify and complete fulfilment.</div>
-                  </div>
-                  <ScanIn label="Final verification — scan the label to complete" placeholder="Scan label barcode → Enter" onScan={onVerify} />
-                  {err&&<div style={{color:"var(--red)",fontSize:12,marginTop:7,fontFamily:"var(--mono)"}}>⚠ {err}</div>}
-                </div>
-              )}
-
-              {s==="Fulfilled" && (
-                <div style={{textAlign:"center",padding:"8px 0"}}>
-                  <div style={{fontSize:30,marginBottom:7}}>🎉</div>
-                  <div style={{fontWeight:700,color:"var(--green)",fontSize:15}}>Order Completely Fulfilled</div>
-                  <div className="mono sm muted mt4">Tracking: {f.labelTrackingNumber}</div>
-                </div>
-              )}
             </div>
           )}
+
+          {/* ── FULFILLED ────────────────────────────────────────────── */}
+          {isDone && (
+            <div className="scard done">
+              <div style={{textAlign:"center",padding:"12px 0"}}>
+                <div style={{fontSize:36,marginBottom:8}}>🎉</div>
+                <div style={{fontWeight:700,color:"var(--green)",fontSize:16}}>Order Fully Fulfilled</div>
+                <div className="mono sm muted" style={{marginTop:4}}>Tracking: {f.labelTrackingNumber}</div>
+                <div className="sm muted" style={{marginTop:2}}>{"Shipped to: "+f.shippingAddress}</div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
     </div>
   );
 };
+
 
 const Fulfillment = ({fulfillments,setFulfillments,inventory,locations,setInventory,setOrders,supplies,setSupplies}) => {
   const [tab,setTab]=useState("active"); const [q,setQ]=useState("");
