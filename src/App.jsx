@@ -649,7 +649,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
   const setE = (msg) => { setErr(msg); setTimeout(()=>setErr(""),3500); };
   const upd = (patch) => setFulfillments(p=>p.map(x=>x.id===f.id?{...x,...patch}:x));
   const products = useMemo(()=>inventory.filter(i=>!i.isPackaging),[inventory]);
-  const packaging = useMemo(()=>inventory.filter(i=>i.isPackaging),[inventory]);
+  const packaging = useMemo(()=>(supplies||[]).filter(s=>supAvail(s)>0),[supplies]);
 
   const sugPkg = useMemo(()=>{
     const its=f.items.map(oi=>products.find(p=>p.sku===oi.sku)).filter(Boolean);
@@ -695,20 +695,15 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
     });
     upd({packedSkus:np, status:allPacked?"Packaging":"Packing"});
   };
-  const onPkgScan = (sku) => {
-    const pkg=packaging.find(i=>i.sku===sku);
-    if(!pkg) {
-      // Try supplies inventory
-      const sup=supplies.find(s=>s.sku===sku);
-      if(sup) { confirmSupplyUse(sup); return; }
-      return setE(`SKU ${sku} not found in packaging or supplies`);
-    }
-    upd({packaging:pkg.sku,packagingName:pkg.name});
+  const onPkgScan = function(sku) {
+    var sup=supplies.find(function(s){ return s.sku===sku; });
+    if(!sup) return setE("SKU "+sku+" not found in supplies");
+    confirmSupplyUse(sup);
   };
 
-  const confirmSupplyUse = (sup) => {
-    const avail=(sup.bundleQty*sup.unitsPerBundle)-sup.unitsUsed;
-    if(avail<=0) return setE(`${sup.name} is out of stock!`);
+  const confirmSupplyUse = function(sup) {
+    var avail=supAvail(sup);
+    if(avail<=0) return setE(sup.name+" is out of stock!");
     upd({packaging:sup.sku,packagingName:sup.name,supplyUsed:sup.id});
   };
 
@@ -868,14 +863,19 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                   <>
                     <div className="fl" style={{marginBottom:9}}>Available Packaging — Click or scan to confirm</div>
                     <div className="pkg-grid mb12">
-                      {packaging.map(pkg=>(
-                        <div key={pkg.sku} className={`pko ${f.packaging===pkg.sku?"sel":""}`} onClick={()=>upd({packaging:pkg.sku,packagingName:pkg.name})}>
-                          <div className="pko-icon">{(PKG_TYPES.find(p=>p.type===pkg.pkgType)||{}).icon||"📦"}</div>
-                          <div className="pko-name">{pkg.name}</div>
-                          <div className="pko-dims">{pkg.sku}</div>
-                          {pkg.dimL>0&&<div className="pko-dims">{pkg.dimL}×{pkg.dimW}×{pkg.dimH}in</div>}
-                        </div>
-                      ))}
+                      {packaging.map(function(pkg){
+                        var supType=(SUPPLY_TYPES.find(function(t){ return t.type===pkg.type; })||{});
+                        var avail=supAvail(pkg);
+                        return (
+                          <div key={pkg.sku} className={"pko "+(f.packaging===pkg.sku?"sel":"")}
+                            onClick={function(){ confirmSupplyUse(pkg); }}>
+                            <div className="pko-icon">{supType.icon||"📦"}</div>
+                            <div className="pko-name">{pkg.name}</div>
+                            <div className="pko-dims">{pkg.sku}</div>
+                            <div className="pko-dims" style={{color:"var(--green)"}}>{avail+" available"}</div>
+                          </div>
+                        );
+                      })}
                     </div>
                     <ScanIn label="Or scan packaging barcode" onScan={onPkgScan} confirmed={!!f.packaging} okText={f.packagingName} />
                     <div style={{marginTop:10}}>
@@ -935,7 +935,7 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                     </div>
                   </div>
                 ) : (
-                  <div className="muted sm">No packaging in inventory. Add items marked as "packaging supply".</div>
+                  <div className="muted sm">No packaging supplies available. Add supplies in the Supplies tab.</div>
                 )}
               </div>
             </div>
