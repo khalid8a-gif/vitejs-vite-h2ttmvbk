@@ -87,7 +87,7 @@ html,body,#root{margin:0;padding:0;width:100%;min-height:100vh}body{background:v
 .pt{font-size:16px;font-weight:700;letter-spacing:-.01em}
 .ps{font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:2px}
 .content{padding:22px;flex:1;box-sizing:border-box;width:100%}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:var(--sans)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:var(--sans);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .btn-p{background:var(--amber);color:#0a0c12;border-color:var(--amber)}.btn-p:hover{background:var(--amber2)}
 .btn-g{background:transparent;color:var(--t2);border-color:var(--b2)}.btn-g:hover{background:var(--s2);color:var(--t1)}
 .btn-d{background:rgba(239,68,68,.1);color:var(--red);border-color:rgba(239,68,68,.25)}.btn-d:hover{background:rgba(239,68,68,.2)}
@@ -199,10 +199,65 @@ td{padding:8px 13px;color:var(--t2);vertical-align:middle}
 @keyframes su{from{transform:translateY(13px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes sf{0%{background:rgba(0,255,136,.18)}100%{background:transparent}}
 .sflash{animation:sf .38s ease}
+
+/* ── Mobile & Tablet responsive ─────────────────────────────────────── */
+@media(max-width:768px){
+  .app{flex-direction:column}
+  .sidebar{width:100%;min-height:0;border-right:none;border-bottom:1px solid var(--b2);padding-bottom:0;display:flex;flex-direction:column}
+  .logo{padding:8px 12px !important}
+  .nsec{display:none}
+  .nav-sections{display:flex;flex-direction:row;overflow-x:auto;gap:0;padding:0 8px 6px;-webkit-overflow-scrolling:touch}
+  .ni{padding:7px 10px;margin:0 2px;border-radius:8px;font-size:12px;white-space:nowrap;flex-shrink:0}
+  .ni-icon{font-size:14px !important}
+  .main{min-height:0}
+  .topbar{padding:10px 14px}
+  .pt{font-size:15px}
+  .content{padding:10px 12px}
+  .r2,.r3,.r4{grid-template-columns:1fr 1fr}
+  .r3{grid-template-columns:1fr 1fr}
+  .r4{grid-template-columns:1fr 1fr}
+  .sg{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .fb{flex-wrap:wrap;gap:7px}
+  .fb .sw{width:100%;flex:none}
+  .fb .sel{font-size:12px}
+  .tw{font-size:12px}
+  table th,table td{padding:6px 8px}
+  .modal{width:96vw !important;max-height:90vh;overflow-y:auto}
+  .modal.mlg{width:96vw !important}
+  .fcard .fch{padding:10px 12px}
+  .fcb{padding:10px 12px}
+  .card{border-radius:8px}
+  .pkg-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .btn{font-size:12px}
+  .btn-xs{font-size:11px;padding:3px 8px}
+  .pipe{overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .pstep{min-width:52px}
+  .scan-zone{padding:8px 10px}
+  .tabs{gap:4px}
+  .tab{padding:6px 10px;font-size:12px}
+  input.inp,select.sel,textarea.ta{font-size:16px !important}
+}
+@media(max-width:480px){
+  .r2{grid-template-columns:1fr}
+  .r3{grid-template-columns:1fr}
+  .r4{grid-template-columns:1fr 1fr}
+  .sg{grid-template-columns:1fr 1fr}
+  .ni{padding:6px 9px;font-size:11px}
+  table th,table td{padding:5px 6px;font-size:11px}
+  .content{padding:8px 10px}
+  .topbar{padding:8px 12px}
+}
 `;
 
 let _css = false;
 const injectCSS = () => {
+  if (!document.querySelector('meta[name="viewport"]')) {
+    var vp = document.createElement("meta");
+    vp.name = "viewport";
+    vp.content = "width=device-width, initial-scale=1";
+    document.head.appendChild(vp);
+  }
   if (!_css && !document.getElementById("wms2-css")) {
     const s = document.createElement("style"); s.id = "wms2-css"; s.textContent = CSS;
     document.head.appendChild(s); _css = true;
@@ -228,25 +283,185 @@ const BC = ({ value, h = 48, small = false }) => {
 };
 
 // ── Scan Input ───────────────────────────────────────────────────────────────
+// ── Camera Barcode Scanner ───────────────────────────────────────────────────
+const CameraScanner = ({ onScan, onClose }) => {
+  const videoRef = useRef(null);
+  const [err, setErr] = useState(null);
+  const [ready, setReady] = useState(false);
+  const streamRef = useRef(null);
+  const readerRef = useRef(null);
+
+  useEffect(function() {
+    var active = true;
+    var stream = null;
+
+    function stopAll() {
+      active = false;
+      if(readerRef.current) { try { readerRef.current.reset(); } catch(e){} }
+      if(streamRef.current) { streamRef.current.getTracks().forEach(function(t){ t.stop(); }); }
+    }
+
+    // Load ZXing dynamically
+    var script = document.querySelector('script[data-zxing]');
+    function startZxing() {
+      if(!active) return;
+      var hints = new Map();
+      var formats = [
+        window.ZXing.BarcodeFormat.QR_CODE,
+        window.ZXing.BarcodeFormat.EAN_13,
+        window.ZXing.BarcodeFormat.EAN_8,
+        window.ZXing.BarcodeFormat.CODE_128,
+        window.ZXing.BarcodeFormat.CODE_39,
+        window.ZXing.BarcodeFormat.UPC_A,
+        window.ZXing.BarcodeFormat.UPC_E,
+        window.ZXing.BarcodeFormat.DATA_MATRIX,
+        window.ZXing.BarcodeFormat.ITF,
+      ];
+      hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+      hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+      var reader = new window.ZXing.BrowserMultiFormatReader(hints);
+      readerRef.current = reader;
+
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      }).then(function(s) {
+        if(!active) { s.getTracks().forEach(function(t){ t.stop(); }); return; }
+        stream = s;
+        streamRef.current = s;
+        if(videoRef.current) {
+          videoRef.current.srcObject = s;
+          videoRef.current.play();
+          setReady(true);
+        }
+        reader.decodeFromStream(s, videoRef.current, function(result, err2) {
+          if(result && active) {
+            var text = result.getText();
+            stopAll();
+            onScan(text);
+          }
+        });
+      }).catch(function(e) {
+        setErr('Camera access denied. Please allow camera permission and try again.');
+      });
+    }
+
+    if(window.ZXing) {
+      startZxing();
+    } else {
+      if(!script) {
+        script = document.createElement('script');
+        script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+        script.setAttribute('data-zxing','1');
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', startZxing);
+      if(script.readyState === 'complete') startZxing();
+    }
+
+    return stopAll;
+  }, []);
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,0.92)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+      <div style={{width:'100%',maxWidth:480,padding:'0 16px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div style={{color:'var(--amber)',fontWeight:700,fontSize:15,fontFamily:'var(--mono)'}}>📷 Scan Barcode</div>
+          <button className="btn btn-d" style={{padding:'4px 12px'}} onClick={onClose}>✕ Close</button>
+        </div>
+
+        {err ? (
+          <div style={{background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'16px',color:'#ef4444',fontSize:13,textAlign:'center'}}>
+            {err}
+          </div>
+        ) : (
+          <div style={{position:'relative',borderRadius:14,overflow:'hidden',background:'#000',border:'2px solid var(--amber)'}}>
+            <video ref={videoRef} style={{width:'100%',display:'block',maxHeight:360,objectFit:'cover'}} playsInline muted />
+            {!ready && (
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--amber)',fontFamily:'var(--mono)',fontSize:13}}>
+                Starting camera...
+              </div>
+            )}
+            {/* Scan guide overlay */}
+            <div style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+              <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'65%',height:80,border:'2px solid var(--amber)',borderRadius:6,boxShadow:'0 0 0 9999px rgba(0,0,0,0.4)'}}>
+                <div style={{position:'absolute',top:-1,left:-1,width:18,height:18,borderTop:'3px solid var(--amber)',borderLeft:'3px solid var(--amber)',borderRadius:'4px 0 0 0'}} />
+                <div style={{position:'absolute',top:-1,right:-1,width:18,height:18,borderTop:'3px solid var(--amber)',borderRight:'3px solid var(--amber)',borderRadius:'0 4px 0 0'}} />
+                <div style={{position:'absolute',bottom:-1,left:-1,width:18,height:18,borderBottom:'3px solid var(--amber)',borderLeft:'3px solid var(--amber)',borderRadius:'0 0 0 4px'}} />
+                <div style={{position:'absolute',bottom:-1,right:-1,width:18,height:18,borderBottom:'3px solid var(--amber)',borderRight:'3px solid var(--amber)',borderRadius:'0 0 4px 0'}} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{color:'var(--t3)',fontSize:11,textAlign:'center',marginTop:10,fontFamily:'var(--mono)'}}>
+          Point camera at barcode — scans automatically
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ScanIn = ({ label, placeholder, onScan, confirmed, okText }) => {
   const [v, setV] = useState("");
+  const [mode, setMode] = useState("scanner"); // "scanner" | "camera"
+  const [cam, setCam] = useState(false);
   const ref = useRef(null);
   const zone = useRef(null);
-  const go = () => {
-    if (!v.trim()) return;
-    onScan(v.trim()); setV("");
+  const flash = function() {
     if(zone.current) zone.current.classList.add("sflash");
     setTimeout(function(){ if(zone.current) zone.current.classList.remove("sflash"); }, 380);
   };
+  const go = function() {
+    if (!v.trim()) return;
+    onScan(v.trim()); setV(""); flash();
+  };
+  const handleCamScan = function(val) {
+    setCam(false); onScan(val); flash();
+  };
   return (
     <div>
+      {cam && <CameraScanner onScan={handleCamScan} onClose={function(){ setCam(false); }} />}
       {label && <div className="scan-lbl" style={{marginBottom:6}}>{label}</div>}
-      <div className="scan-zone" ref={zone} onClick={function(){ if(ref.current) ref.current.focus(); }}>
-        <span style={{fontSize:22}}>⬡</span>
-        <input ref={ref} className="scan-inp" value={v} onChange={(e)=>setV(e.target.value)}
-          onKeyDown={(e)=>e.key==="Enter"&&go()} placeholder={placeholder||"Scan barcode → Enter"} />
-        {confirmed && <div className="scan-ok"><span>✓</span><span>{okText||"Confirmed"}</span></div>}
+
+      {/* Mode toggle */}
+      <div style={{display:"flex",gap:0,marginBottom:7,borderRadius:8,overflow:"hidden",border:"1px solid var(--b1)",width:"fit-content"}}>
+        <button
+          onClick={function(){ setMode("scanner"); }}
+          style={{padding:"5px 14px",fontSize:11,fontWeight:600,border:"none",cursor:"pointer",
+            background:mode==="scanner"?"var(--red)":"var(--s2)",
+            color:mode==="scanner"?"#fff":"var(--t3)"}}>
+          ⬡ Scanner
+        </button>
+        <button
+          onClick={function(){ setMode("camera"); }}
+          style={{padding:"5px 14px",fontSize:11,fontWeight:600,border:"none",cursor:"pointer",
+            background:mode==="camera"?"var(--red)":"var(--s2)",
+            color:mode==="camera"?"#fff":"var(--t3)"}}>
+          📷 Camera
+        </button>
       </div>
+
+      {mode==="scanner" ? (
+        <div className="scan-zone" ref={zone} onClick={function(){ if(ref.current) ref.current.focus(); }}>
+          <span style={{fontSize:22}}>⬡</span>
+          <input ref={ref} className="scan-inp" value={v} onChange={function(e){ setV(e.target.value); }}
+            onKeyDown={function(e){ if(e.key==="Enter") go(); }}
+            placeholder={placeholder||"Scan barcode → Enter"} autoFocus />
+          {confirmed && <div className="scan-ok"><span>✓</span><span>{okText||"Confirmed"}</span></div>}
+        </div>
+      ) : (
+        <div ref={zone}>
+          {!cam ? (
+            <button className="btn btn-s w100"
+              style={{padding:"10px",fontSize:13,border:"1px dashed var(--amber)",color:"var(--amber)",background:"var(--adim)"}}
+              onClick={function(){ setCam(true); }}>
+              📷 Open Camera to Scan
+            </button>
+          ) : (
+            <div style={{fontSize:12,color:"var(--t3)",fontFamily:"var(--mono)",padding:"6px 0"}}>Camera active…</div>
+          )}
+          {confirmed && <div className="scan-ok" style={{marginTop:6}}><span>✓</span><span>{okText||"Confirmed"}</span></div>}
+        </div>
+      )}
     </div>
   );
 };
@@ -266,6 +481,65 @@ const Badge = ({label,color}) => <span className="bdg" style={{background:`${col
 const Empty = ({icon,title,sub,action}) => (
   <div className="empty"><div className="ei">{icon}</div><div className="et">{title}</div><div className="es">{sub}</div>{action&&<div className="mt16">{action}</div>}</div>
 );
+
+// ── Barcode PDF / Print helper ────────────────────────────────────────────────
+const printBarcodeLabel = function(item, qty) {
+  loadJsBarcode().then(function(JB) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    try {
+      JB(svg, item.sku, {
+        format:"CODE128", lineColor:"#000", background:"#fff",
+        height:56, width:2.2, displayValue:true, fontSize:10,
+        font:"monospace", margin:4, textMargin:3,
+      });
+    } catch(e) { alert("Could not generate barcode for: "+item.sku); return; }
+    var svgData = new XMLSerializer().serializeToString(svg);
+    var svgB64 = "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svgData)));
+
+    // One label per page — sized exactly 2" x 1" for thermal label printers
+    var labels = "";
+    for(var i=0; i<qty; i++) {
+      labels += '<div class="label">'
+        + (item.image ? '<img class="limg" src="'+item.image+'" />' : '')
+        + '<div class="lbody">'
+        + '<div class="lname">'+item.name.substring(0,36)+(item.name.length>36?"…":"")+'</div>'
+        + '<img class="lbc" src="'+svgB64+'" />'
+        + '<div class="lmeta">'
+        + (item.condition&&item.condition!=="New" ? '<span class="tag">'+item.condition+'</span>' : '')
+        + (item.location ? '<span class="tag">📍'+item.location+'</span>' : '')
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    }
+
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+      + '<title>Labels — '+item.sku+'</title>'
+      + '<style>'
+      + '*{box-sizing:border-box;margin:0;padding:0}'
+      + 'body{font-family:monospace;background:#fff;-webkit-print-color-adjust:exact}'
+      + '.label{width:2in;height:1in;display:flex;align-items:center;gap:4px;padding:3px 5px;overflow:hidden;page-break-after:always;border:0.5px dashed #ccc}'
+      + '.label:last-child{page-break-after:avoid}'
+      + '.limg{width:32px;height:32px;object-fit:cover;border-radius:2px;flex-shrink:0}'
+      + '.lbody{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}'
+      + '.lname{font-size:7.5px;font-weight:700;color:#000;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+      + '.lbc{max-width:100%;height:42px;object-fit:contain}'
+      + '.lmeta{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}'
+      + '.tag{font-size:6.5px;color:#333;background:#f0f0f0;padding:1px 4px;border-radius:2px}'
+      + '@media print{'
+      + '@page{size:2in 1in;margin:0}'
+      + '.label{border:none;width:2in;height:1in;padding:3px 4px}'
+      + '}'
+      + '</style></head><body>'
+      + labels
+      + '<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>'
+      + '</body></html>';
+
+    var w = window.open("","_blank","width=500,height=400");
+    if(!w){ alert("Pop-up blocked — please allow pop-ups for this site."); return; }
+    w.document.write(html);
+    w.document.close();
+  });
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 // INVENTORY
@@ -318,7 +592,23 @@ const ItemForm = ({item,locations,onChange}) => {
         <input ref={imgRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImg} />
       </div>
       <div className="r2">
-        <div className="fg"><label className="fl">SKU *</label><input className="inp" value={item.sku} onChange={(e)=>onChange("sku",e.target.value)} /></div>
+        <div className="fg">
+          <label className="fl">SKU *</label>
+          <div style={{display:"flex",gap:6}}>
+            <input className="inp" value={item.sku} onChange={(e)=>onChange("sku",e.target.value)}
+              placeholder="Type manually or scan barcode" style={{flex:1,fontFamily:"var(--mono)"}} />
+            <button className="btn btn-s" style={{whiteSpace:"nowrap",fontSize:11,padding:"0 10px"}}
+              onClick={function(){ onChange("_scanSku",!item._scanSku); }}>
+              {"📷 "+(item._scanSku?"Cancel":"Scan")}
+            </button>
+          </div>
+          {item._scanSku&&(
+            <CameraScanner
+              onScan={function(val){ onChange("sku",val); onChange("_scanSku",false); }}
+              onClose={function(){ onChange("_scanSku",false); }}
+            />
+          )}
+        </div>
         <div className="fg"><label className="fl">Condition</label>
           <select className="sel" value={item.condition} onChange={(e)=>onChange("condition",e.target.value)}>
             {CONDITIONS.map(c=><option key={c}>{c}</option>)}
@@ -447,15 +737,31 @@ const Inventory = ({inventory,setInventory,locations}) => {
       )}
 
       {bcModal && (
-        <Modal title={`Barcode — ${bcModal.sku}`} onClose={()=>setBcModal(null)} footer={<button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>}>
+        <Modal title={"Barcode — "+bcModal.sku} onClose={()=>setBcModal(null)}
+          footer={
+            <div style={{display:"flex",gap:8,justifyContent:"space-between",width:"100%"}}>
+              <div style={{display:"flex",gap:8}}>
+                <select id="bc-print-qty" className="sel" style={{width:"auto",padding:"4px 8px",fontSize:12}}>
+                  {[1,2,3,4,5,10,15,20,25,50].map(function(n){ return <option key={n} value={n}>{n} label{n>1?"s":""}</option>; })}
+                </select>
+                <button className="btn btn-p" onClick={function(){ printBarcodeLabel(bcModal, +(document.getElementById("bc-print-qty").value)||1); }}>
+                  🖨 Print PDF
+                </button>
+              </div>
+              <button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>
+            </div>
+          }>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:15,padding:"8px 0"}}>
             {bcModal.image && <img src={bcModal.image} style={{width:80,height:80,objectFit:"cover",borderRadius:8,border:"1px solid var(--b1)"}} />}
             <div style={{fontSize:15,fontWeight:700}}>{bcModal.name}</div>
             <BC value={bcModal.sku} h={70} />
             <div style={{display:"flex",gap:18}}>
-              {[["Condition",bcModal.condition],["Qty",bcModal.quantity],["Location",bcModal.location||"—"]].map(([k,v])=>(
-                <div key={k} className="sm muted">{k}: <span className="amber">{v}</span></div>
-              ))}
+              {[["Condition",bcModal.condition],["Qty",totalQty(bcModal)],["Location",bcModal.location||"—"]].map(function(pair){
+                return <div key={pair[0]} className="sm muted">{pair[0]}: <span className="amber">{pair[1]}</span></div>;
+              })}
+            </div>
+            <div className="sm muted" style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--t3)"}}>
+              Select quantity above then click Print PDF
             </div>
           </div>
         </Modal>
@@ -793,20 +1099,28 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
                       {"📍 Confirm pick location for: "+pendingPickSku}
                     </div>
                     <div className="sm muted mb8">Select shelf location or scan shelf barcode</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
-                      {(locations||[]).map(function(loc){
+                    {function(){
                         var inv2=products.find(function(p){ return p.sku===pendingPickSku; });
-                        var lqMatch=inv2&&inv2.locationQty&&inv2.locationQty.find(function(l){ return l.location===loc.name; });
-                        var qtyLabel=lqMatch?" ("+lqMatch.qty+")":"";
-                        return (
-                          <button key={loc.id} className="btn btn-s"
-                            style={{background:"var(--s3)",border:"1px solid var(--b1)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:11}}
-                            onClick={function(){ confirmPickLocation(pendingPickSku, loc.name); }}>
-                            {"📍 "+loc.name+qtyLabel}
-                          </button>
+                        var lqs=(inv2&&inv2.locationQty&&inv2.locationQty.length>0)
+                          ? inv2.locationQty.filter(function(l){ return l.qty>0; })
+                          : (inv2&&inv2.location ? [{location:inv2.location,qty:inv2.quantity||1}] : []);
+                        if(lqs.length===0) return (
+                          <div className="sm muted mb10">No stock locations found — scan shelf barcode below</div>
                         );
-                      })}
-                    </div>
+                        return (
+                          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+                            {lqs.map(function(lq){
+                              return (
+                                <button key={lq.location} className="btn btn-s"
+                                  style={{background:"var(--s3)",border:"1px solid rgba(245,166,35,.4)",color:"var(--amber)",fontFamily:"var(--mono)",fontSize:12,padding:"6px 12px"}}
+                                  onClick={function(){ confirmPickLocation(pendingPickSku, lq.location); }}>
+                                  {"📍 "+lq.location+" · "+lq.qty+" in stock"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      }()}
                     <ScanIn label="Or scan shelf barcode" onScan={function(loc){ confirmPickLocation(pendingPickSku, loc); }} />
                     <button className="btn btn-s" style={{marginTop:8,color:"var(--t3)"}} onClick={function(){ setPendingPickSku(null); }}>✕ Cancel</button>
                   </div>
@@ -1324,8 +1638,21 @@ const Supplies = ({supplies,setSupplies}) => {
 
       {/* Barcode Modal — same as inventory */}
       {bcModal && (
-        <Modal title={`Barcode — ${bcModal.sku}`} onClose={()=>setBcModal(null)}
-          footer={<button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>}>
+        <Modal title={"Barcode — "+bcModal.sku} onClose={()=>setBcModal(null)}
+          footer={
+            <div style={{display:"flex",gap:8,justifyContent:"space-between",width:"100%"}}>
+              <div style={{display:"flex",gap:8}}>
+                <select id="bc-sup-qty" className="sel" style={{width:"auto",padding:"4px 8px",fontSize:12}}>
+                  {[1,2,3,4,5,10,15,20,25,50].map(function(n){ return <option key={n} value={n}>{n} label{n>1?"s":""}</option>; })}
+                </select>
+                <button className="btn btn-p" onClick={function(){
+                  var qty=+(document.getElementById("bc-sup-qty").value)||1;
+                  printBarcodeLabel({sku:bcModal.sku,name:bcModal.name,condition:bcModal.type,location:bcModal.location,image:null},qty);
+                }}>🖨 Print PDF</button>
+              </div>
+              <button className="btn btn-g" onClick={()=>setBcModal(null)}>Close</button>
+            </div>
+          }>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:15,padding:"8px 0"}}>
             <div style={{fontSize:42,lineHeight:1}}>{(SUPPLY_TYPES.find(t=>t.type===bcModal.type)||{}).icon||"📦"}</div>
             <div style={{fontSize:16,fontWeight:700,textAlign:"center"}}>{bcModal.name}</div>
@@ -1752,19 +2079,16 @@ export default function App() {
             </div>
           </div>
         </div>
-        {secs.map(sec => (
-          <div key={sec}>
-            <div className="nsec">{sec}</div>
-            {NAV.filter(n => n.sec === sec).map(n => (
-              <div key={n.id} className={`ni ${page===n.id?"on":""}`} onClick={() => setPage(n.id)}>
-                <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
-                <span>{n.label}</span>
-                {n.id==="fulfillment"  && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
-                {n.id==="fulfillment"  && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
-              </div>
-            ))}
-          </div>
-        ))}
+        <div className="nav-sections">
+          {NAV.map(n => (
+            <div key={n.id} className={"ni "+(page===n.id?"on":"")} onClick={() => setPage(n.id)}>
+              <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
+              <span>{n.label}</span>
+              {n.id==="fulfillment" && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
+              {n.id==="fulfillment" && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
+            </div>
+          ))}
+        </div>
       </nav>
 
       <div className="main">
