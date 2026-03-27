@@ -200,36 +200,41 @@ td{padding:8px 13px;color:var(--t2);vertical-align:middle}
 @keyframes sf{0%{background:rgba(0,255,136,.18)}100%{background:transparent}}
 .sflash{animation:sf .38s ease}
 
+/* ── Mobile drawer & hamburger ──────────────────────────────────────── */
+.mob-overlay{display:none}
+.mob-drawer{display:none}
+.mob-topbar{display:none}
+.hamburger{display:none}
+
 /* ── Mobile & Tablet responsive ─────────────────────────────────────── */
-@media(max-width:768px){
-  .app{flex-direction:column}
-  .sidebar{width:100%;min-height:0;border-right:none;border-bottom:1px solid var(--b2);padding-bottom:0;display:flex;flex-direction:column}
-  .logo{padding:8px 12px !important}
-  .nsec{display:none}
-  .nav-sections{display:flex;flex-direction:row;overflow-x:auto;gap:0;padding:0 8px 6px;-webkit-overflow-scrolling:touch}
-  .ni{padding:7px 10px;margin:0 2px;border-radius:8px;font-size:12px;white-space:nowrap;flex-shrink:0}
-  .ni-icon{font-size:14px !important}
-  .main{min-height:0}
-  .topbar{padding:10px 14px}
-  .pt{font-size:15px}
+@media(max-width:900px){
+  .sidebar{display:none}
+  .topbar{display:none}
+  .mob-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
+  .mob-drawer{display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100%;width:78vw;max-width:300px;background:#0e0404;border-right:1px solid #2a0a0a;z-index:300;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .mob-drawer.open{transform:translateX(0)}
+  .mob-ni{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;color:var(--t2);transition:background .15s}
+  .mob-ni.on{background:rgba(224,48,48,.12);color:var(--amber);border-left:3px solid var(--red)}
+  .mob-ni:active{background:rgba(255,255,255,.07)}
+  .mob-topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s1);border-bottom:1px solid var(--b1);position:sticky;top:0;z-index:100;min-height:50px}
+  .hamburger{display:flex;flex-direction:column;justify-content:center;gap:5px;background:none;border:1px solid var(--b2);border-radius:7px;padding:7px 9px;cursor:pointer;flex-shrink:0}
+  .hamburger span{display:block;width:18px;height:2px;background:var(--t1);border-radius:2px}
+  .main{width:100%}
   .content{padding:10px 12px}
-  .r2,.r3,.r4{grid-template-columns:1fr 1fr}
+  .r2{grid-template-columns:1fr 1fr}
   .r3{grid-template-columns:1fr 1fr}
   .r4{grid-template-columns:1fr 1fr}
   .sg{grid-template-columns:1fr 1fr}
   .g2{grid-template-columns:1fr}
   .fb{flex-wrap:wrap;gap:7px}
   .fb .sw{width:100%;flex:none}
-  .fb .sel{font-size:12px}
   .tw{font-size:12px}
   table th,table td{padding:6px 8px}
   .modal{width:96vw !important;max-height:90vh;overflow-y:auto}
   .modal.mlg{width:96vw !important}
-  .fcard .fch{padding:10px 12px}
+  .fcard .fch{padding:10px 12px;gap:8px}
   .fcb{padding:10px 12px}
-  .card{border-radius:8px}
   .pkg-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
-  .btn{font-size:12px}
   .btn-xs{font-size:11px;padding:3px 8px}
   .pipe{overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
   .pstep{min-width:52px}
@@ -243,10 +248,9 @@ td{padding:8px 13px;color:var(--t2);vertical-align:middle}
   .r3{grid-template-columns:1fr}
   .r4{grid-template-columns:1fr 1fr}
   .sg{grid-template-columns:1fr 1fr}
-  .ni{padding:6px 9px;font-size:11px}
   table th,table td{padding:5px 6px;font-size:11px}
   .content{padding:8px 10px}
-  .topbar{padding:8px 12px}
+  .mob-topbar{padding:8px 12px}
 }
 `;
 
@@ -485,57 +489,86 @@ const Empty = ({icon,title,sub,action}) => (
 // ── Barcode PDF / Print helper ────────────────────────────────────────────────
 const printBarcodeLabel = function(item, qty) {
   loadJsBarcode().then(function(JB) {
+    // Generate a wide barcode SVG — no image product photo next to it
+    // width/height in JsBarcode are in px units for the SVG
     var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
     try {
       JB(svg, item.sku, {
-        format:"CODE128", lineColor:"#000", background:"#fff",
-        height:56, width:2.2, displayValue:true, fontSize:10,
-        font:"monospace", margin:4, textMargin:3,
+        format:"CODE128",
+        lineColor:"#000",
+        background:"#fff",
+        height:48,        // bar height in px
+        width:2,          // bar width multiplier — keeps total width narrow enough
+        displayValue:true,
+        fontSize:9,
+        font:"monospace",
+        margin:2,
+        textMargin:2,
       });
     } catch(e) { alert("Could not generate barcode for: "+item.sku); return; }
-    var svgData = new XMLSerializer().serializeToString(svg);
-    var svgB64 = "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svgData)));
 
-    // One label per page — sized exactly 2" x 1" for thermal label printers
+    // Inline the SVG directly — avoids any browser img-scaling issues
+    var svgData = new XMLSerializer().serializeToString(svg);
+    var svgInline = svgData
+      .replace(/^<svg /, '<svg style="width:100%;height:auto;display:block;max-height:52px;" ');
+
     var labels = "";
     for(var i=0; i<qty; i++) {
-      labels += '<div class="label">'
-        + (item.image ? '<img class="limg" src="'+item.image+'" />' : '')
-        + '<div class="lbody">'
-        + '<div class="lname">'+item.name.substring(0,36)+(item.name.length>36?"…":"")+'</div>'
-        + '<img class="lbc" src="'+svgB64+'" />'
-        + '<div class="lmeta">'
-        + (item.condition&&item.condition!=="New" ? '<span class="tag">'+item.condition+'</span>' : '')
-        + (item.location ? '<span class="tag">📍'+item.location+'</span>' : '')
-        + '</div>'
-        + '</div>'
+      var nameLine = item.name ? item.name.substring(0,40)+(item.name.length>40?"…":"") : item.sku;
+      var meta = [];
+      if(item.condition && item.condition!=="New") meta.push(item.condition);
+      if(item.location) meta.push("\uD83D\uDCCD "+item.location);
+      labels +=
+        '<div class="label">'
+        + '<div class="lname">'+nameLine+'</div>'
+        + '<div class="lbc">'+svgInline+'</div>'
+        + (meta.length ? '<div class="lmeta">'+meta.join(' &nbsp;·&nbsp; ')+'</div>' : '')
         + '</div>';
     }
 
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
-      + '<title>Labels — '+item.sku+'</title>'
+    var html = '<!DOCTYPE html><html><head>'
+      + '<meta charset="UTF-8">'
+      + '<title>Labels \u2014 '+item.sku+'</title>'
       + '<style>'
+      // Reset
       + '*{box-sizing:border-box;margin:0;padding:0}'
-      + 'body{font-family:monospace;background:#fff;-webkit-print-color-adjust:exact}'
-      + '.label{width:2in;height:1in;display:flex;align-items:center;gap:4px;padding:3px 5px;overflow:hidden;page-break-after:always;border:0.5px dashed #ccc}'
-      + '.label:last-child{page-break-after:avoid}'
-      + '.limg{width:32px;height:32px;object-fit:cover;border-radius:2px;flex-shrink:0}'
-      + '.lbody{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}'
-      + '.lname{font-size:7.5px;font-weight:700;color:#000;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
-      + '.lbc{max-width:100%;height:42px;object-fit:contain}'
-      + '.lmeta{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}'
-      + '.tag{font-size:6.5px;color:#333;background:#f0f0f0;padding:1px 4px;border-radius:2px}'
-      + '@media print{'
-      + '@page{size:2in 1in;margin:0}'
-      + '.label{border:none;width:2in;height:1in;padding:3px 4px}'
+      // Body — white, no extra margins
+      + 'body{font-family:monospace;background:#fff;color:#000}'
+      // One label per page, exactly 2in x 1in
+      + '.label{'
+      +   'width:2in;height:1in;'
+      +   'display:flex;flex-direction:column;justify-content:center;align-items:center;'
+      +   'padding:3px 5px;gap:1px;'
+      +   'overflow:hidden;'
+      +   'page-break-after:always;'
       + '}'
-      + '</style></head><body>'
+      + '.label:last-child{page-break-after:avoid}'
+      // Product name — single line, bold
+      + '.lname{font-size:8px;font-weight:700;text-align:center;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}'
+      // Barcode wrapper — fills available space
+      + '.lbc{width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}'
+      + '.lbc svg{width:100%;height:100%;max-height:52px}'
+      // Meta line
+      + '.lmeta{font-size:6.5px;color:#333;text-align:center;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}'
+      // Print page — exactly 2x1in, zero margin so label fills the page
+      + '@media print{'
+      +   '@page{size:2in 1in;margin:0}'
+      +   'body{margin:0}'
+      +   '.label{width:2in;height:1in;padding:2px 4px;border:none}'
+      + '}'
+      // Screen preview — dashed border so you can see the label boundary
+      + '@media screen{'
+      +   '.label{border:1px dashed #bbb;margin:8px auto}'
+      +   'body{padding:10px;background:#f5f5f5}'
+      + '}'
+      + '</style>'
+      + '</head><body>'
       + labels
-      + '<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>'
+      + '<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>'
       + '</body></html>';
 
     var w = window.open("","_blank","width=500,height=400");
-    if(!w){ alert("Pop-up blocked — please allow pop-ups for this site."); return; }
+    if(!w){ alert("Pop-up blocked \u2014 please allow pop-ups for this site."); return; }
     w.document.write(html);
     w.document.close();
   });
@@ -977,10 +1010,19 @@ const FCard = ({f,inventory,locations,setInventory,setFulfillments,setOrders,sup
     if(setInventory) setInventory(function(prev){
       return prev.map(function(item){
         if(item.sku!==sku) return item;
-        var lqs=(item.locationQty||[]).map(function(l){
-          return l.location===location ? Object.assign({},l,{qty:Math.max(0,l.qty-1)}) : l;
-        }).filter(function(l){ return l.qty>0; });
-        return Object.assign({},item,{locationQty:lqs,quantity:Math.max(0,(item.quantity||0)-1)});
+        // Deduct from locationQty if it exists
+        var lqs = (item.locationQty&&item.locationQty.length>0)
+          ? item.locationQty.map(function(l){
+              return l.location===location ? Object.assign({},l,{qty:Math.max(0,l.qty-1)}) : l;
+            }).filter(function(l){ return l.qty>0; })
+          : (item.locationQty||[]);
+        // Always deduct from total quantity regardless
+        var newQty = Math.max(0,(item.quantity||0)-1);
+        // Recompute from locationQty if it has data, else use direct deduct
+        if(lqs.length>0){
+          newQty = lqs.reduce(function(s,l){ return s+(l.qty||0); },0);
+        }
+        return Object.assign({},item,{locationQty:lqs,quantity:newQty});
       });
     });
     setPendingPickSku(null);
@@ -2067,8 +2109,12 @@ export default function App() {
 
   const secs = [...new Set(NAV.map(n => n.sec))];
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navTo = function(id){ setPage(id); setMenuOpen(false); };
+
   return (
     <div className="app">
+      {/* ── Desktop sidebar ── */}
       <nav className="sidebar">
         <div className="logo" style={{padding:"10px 14px 8px",borderBottom:"1px solid #2a0a0a"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2079,20 +2125,83 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="nav-sections">
-          {NAV.map(n => (
-            <div key={n.id} className={"ni "+(page===n.id?"on":"")} onClick={() => setPage(n.id)}>
-              <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
-              <span>{n.label}</span>
-              {n.id==="fulfillment" && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
-              {n.id==="fulfillment" && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
+        {secs.map(function(sec){
+          return (
+            <div key={sec}>
+              <div className="nsec">{sec}</div>
+              {NAV.filter(function(n){ return n.sec===sec; }).map(function(n){
+                return (
+                  <div key={n.id} className={"ni "+(page===n.id?"on":"")} onClick={function(){ navTo(n.id); }}>
+                    <span className="ni-icon" style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
+                    <span>{n.label}</span>
+                    {n.id==="fulfillment" && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
+                    {n.id==="fulfillment" && readyCount>0 && <span className="nbadge blue" style={{marginLeft:3}}>{readyCount}🚀</span>}
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          );
+        })}
+      </nav>
+
+      {/* ── Mobile drawer overlay ── */}
+      {menuOpen && (
+        <div className="mob-overlay" onClick={function(){ setMenuOpen(false); }} />
+      )}
+      <nav className={"mob-drawer"+(menuOpen?" open":"")}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid #2a0a0a"}}>
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <img src={LOGO_B64} alt="Khair Group" style={{width:34,height:34,objectFit:"contain"}} />
+            <div>
+              <div style={{fontFamily:"var(--mono)",fontSize:10,fontWeight:700,color:"#e8e8e8"}}>KHAIR GROUP</div>
+              <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#c0392b",letterSpacing:"0.08em"}}>Warehouse · WMS</div>
+            </div>
+          </div>
+          <button onClick={function(){ setMenuOpen(false); }}
+            style={{background:"none",border:"none",color:"var(--t2)",fontSize:22,cursor:"pointer",padding:"4px 8px",lineHeight:1}}>✕</button>
         </div>
+        {secs.map(function(sec){
+          return (
+            <div key={sec}>
+              <div className="nsec" style={{padding:"10px 16px 4px",fontSize:9}}>{sec}</div>
+              {NAV.filter(function(n){ return n.sec===sec; }).map(function(n){
+                return (
+                  <div key={n.id} className={"mob-ni"+(page===n.id?" on":"")} onClick={function(){ navTo(n.id); }}>
+                    <span style={{fontSize:18}}>{n.icon}</span>
+                    <span style={{flex:1,fontSize:14,fontWeight:page===n.id?700:400}}>{n.label}</span>
+                    {n.id==="fulfillment" && fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
+                    {n.id==="fulfillment" && readyCount>0 && <span className="nbadge blue">{readyCount}🚀</span>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="main">
         <ConnBanner status={dbStatus} />
+
+        {/* ── Mobile topbar ── */}
+        <div className="mob-topbar">
+          <button className="hamburger" onClick={function(){ setMenuOpen(true); }}>
+            <span/><span/><span/>
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <img src={LOGO_B64} alt="" style={{width:26,height:26,objectFit:"contain"}} />
+            <div style={{fontFamily:"var(--mono)",fontSize:12,fontWeight:700,color:"var(--amber)"}}>
+              {(NAV.find(function(n){ return n.id===page; })||{}).icon} {(NAV.find(function(n){ return n.id===page; })||{}).label}
+            </div>
+          </div>
+          {(fillCount>0||readyCount>0) && (
+            <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
+              {fillCount>0  && <span className="nbadge amber">{fillCount}</span>}
+              {readyCount>0 && <span className="nbadge blue">{readyCount}🚀</span>}
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop topbar ── */}
         <div className="topbar">
           <div>
             <div className="pt">{(NAV.find(n => n.id===page)||{}).label}</div>
@@ -2109,7 +2218,7 @@ export default function App() {
           {page==="supplies"    && <Supplies    supplies={supplies}         setSupplies={syncSupplies} />}
           {page==="locations"   && <Locations   locations={locations}       setLocations={syncLocations}    inventory={inventory} />}
           {page==="orders"      && <Orders      orders={orders}             setOrders={syncOrders}          inventory={inventory}  setFulfillments={syncFulfillments} />}
-          {page==="suppliers"   && <Suppliers   suppliers={suppliers}       setSuppliers={syncSuppliers}    inventory={inventory} />}
+          {page==="suppliers"   && <Suppliers   suppliers={suppliers}       setSuppliers={syncSuppliers}    inventory={inventory} setInventory={syncInventory} locations={locations} />}
           {page==="fulfillment" && <Fulfillment fulfillments={fulfillments} setFulfillments={syncFulfillments} inventory={inventory} locations={locations} setInventory={syncInventory} setOrders={syncOrders} supplies={supplies} setSupplies={syncSupplies} />}
           {page==="reports"     && <Reports     inventory={inventory}       orders={orders}          suppliers={suppliers} />}
         </div>
